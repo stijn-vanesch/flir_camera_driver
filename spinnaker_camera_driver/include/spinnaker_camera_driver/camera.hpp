@@ -143,6 +143,7 @@ private:
   double acquisitionTimeout_{3.0};
   bool adjustTimeStamp_{false};
   bool connectWhileSubscribed_{false};  // if true, connects to SDK when subscription happens
+  bool enableExternalControl_{false};
   uint32_t currentExposureTime_{0};
   double averageTimeDifference_{std::numeric_limits<double>::quiet_NaN()};
   int64_t baseTimeOffset_{0};

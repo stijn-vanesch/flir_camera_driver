@@ -216,6 +216,7 @@ void Camera::readParameters()
   acquisitionTimeout_ = safe_declare<double>(prefix_ + "acquisition_timeout", 3.0);
   parameterFile_ = safe_declare<std::string>(prefix_ + "parameter_file", "parameters.yaml");
   connectWhileSubscribed_ = safe_declare<bool>(prefix_ + "connect_while_subscribed", false);
+  enableExternalControl_ = safe_declare<bool>(prefix_ + "enable_external_control", false);
   callbackHandle_ = node_->add_on_set_parameters_callback(
     std::bind(&Camera::parameterChanged, this, std::placeholders::_1));
 }
@@ -667,9 +668,11 @@ bool Camera::start()
 
   infoManager_ = std::make_shared<camera_info_manager::CameraInfoManager>(
     node_, name_.empty() ? node_->get_name() : name_, cameraInfoURL_);
-  controlSub_ = node_->create_subscription<flir_camera_msgs::msg::CameraControl>(
-    "~/" + topicPrefix_ + "control", 10,
-    std::bind(&Camera::controlCallback, this, std::placeholders::_1));
+  if (enableExternalControl_) {
+    controlSub_ = node_->create_subscription<flir_camera_msgs::msg::CameraControl>(
+      "~/" + topicPrefix_ + "control", 10,
+      std::bind(&Camera::controlCallback, this, std::placeholders::_1));
+  }
   metaPub_ =
     node_->create_publisher<flir_camera_msgs::msg::ImageMetaData>("~/" + topicPrefix_ + "meta", 1);
 
