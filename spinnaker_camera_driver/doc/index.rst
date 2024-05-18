@@ -28,6 +28,7 @@ The following cameras have been successfully used with this driver:
 -  Grashopper (USB3)
 -  Oryx (reported working)
 -  Chameleon (USB3, tested on firmware v1.13.3.00)
+-  FLIR AX5 (GigE)
 
 Note: if you get other cameras to work, *please report back*, ideally
 submit a pull request with the camera config file you have created.
@@ -206,7 +207,7 @@ Blackfly S the parameters look like this:
 
 
 
-Setting up GigE cameras
+Network Configuration for GigE cameras
 =======================
 
 The Spinnaker SDK abstracts away the transport layer so a GigE camera
@@ -246,6 +247,14 @@ when not capturing frames, and verify it works in spinview and without
 needing to spin up a custom launch file to get started, though it helps,
 and you’ll probably want one anyway to specify your camera’s serial
 number.
+
+If you do not set up DHCP or set a static IP, your camera will probably 
+assign itself an IP address according to the Link-Local address scheme. 
+The address will be 169.254.xxx.xxx, where the x's are randomly generated.
+In your computer's network settings, change the IPv4 Method for the port
+that connects to your camera to "Link-Local Only." (You could also set 
+the IPv4 Method to "Manual" with an address of 169.254.100.1 and a 
+subnet mask of 255.255.0.0).
 
 For more tips on GigE setup look at FLIR’s support pages
 `here <https://www.flir.com/support-center/iis/machine-vision/knowledge-base/lost-ethernet-data-packets-on-linux-systems/>`__
@@ -291,10 +300,12 @@ valid enum strings in the configuration file, e.g.:
        node: DigitalIOControl/LineMode
 
 The hard part is often finding the node name, in the last example
-``"DigitalIOControl/LineMode"``. It usually follows by removing spaces
-from the ``spinview`` names. If that doesn’t work, launch the driver
-with the ``dump_node_map`` parameter set to “True” and look at the
-output for inspiration.
+``"DigitalIOControl/LineMode"``. It usually follows by removing spaces 
+from the ``spinview`` display names. However, in the SpinView GUI you 
+can also see the true name by double-clicking on a node under the 
+features tab and looking for "Name" (as opposed to "Display Name"). 
+If that doesn't work, launch the driver with the ``dump_node_map`` 
+parameter set to "True" and look at the output for inspiration.
 
 **NOTE: !!!! THE ORDER OF PARAMETER DEFINITION MATTERS !!!!**
 

@@ -20,10 +20,8 @@ from launch.actions import DeclareLaunchArgument as LaunchArg
 from launch.actions import OpaqueFunction
 from launch.substitutions import LaunchConfiguration as LaunchConfig
 from launch.substitutions import PathJoinSubstitution
-
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-
 
 example_parameters = {
     'blackfly_s': {
@@ -59,7 +57,8 @@ example_parameters = {
         'chunk_selector_gain': 'Gain',
         'chunk_enable_gain': True,
         'chunk_selector_timestamp': 'Timestamp',
-        'chunk_enable_timestamp': True},
+        'chunk_enable_timestamp': True,
+    },
     'chameleon': {
         'debug': False,
         'compute_brightness': False,
@@ -83,7 +82,8 @@ example_parameters = {
         'chunk_selector_gain': 'Gain',
         'chunk_enable_gain': True,
         'chunk_selector_timestamp': 'Timestamp',
-        'chunk_enable_timestamp': True},
+        'chunk_enable_timestamp': True,
+    },
     'grasshopper': {
         'debug': False,
         'compute_brightness': False,
@@ -102,8 +102,29 @@ example_parameters = {
         'chunk_selector_gain': 'Gain',
         'chunk_enable_gain': True,
         'chunk_selector_timestamp': 'Timestamp',
-        'chunk_enable_timestamp': True}
-    }
+        'chunk_enable_timestamp': True,
+    },
+    'flir_ax5': {
+        'debug': False,
+        'compute_brightness': False,
+        'adjust_timestamp': False,
+        'dump_node_map': False,
+        # --- Set parameters defined in flir_ax5.yaml
+        'pixel_format': 'Mono8',
+        'gev_scps_packet_size': 576,
+        'image_width': 640,
+        'image_height': 512,
+        'offset_x': 0,
+        'offset_y': 0,
+        'sensor_gain_mode': 'HighGainMode',  # "HighGainMode" "LowGainMode"
+        'nuc_mode': 'Automatic',  # "Automatic" "External" "Manual"
+        'sensor_dde_mode': 'Automatic',  # "Automatic" "Manual"
+        'sensor_video_standard': 'NTSC30HZ',  # "NTSC30HZ" "PAL25Hz" "NTSC60HZ" "PAL50HZ"
+        # valid values: "PlateauHistogram" "OnceBright" "AutoBright" "Manual" "Linear"
+        'image_adjust_method': 'PlateauHistogram',
+        'video_orientation': 'Normal',  # "Normal" "Invert" "Revert" "InvertRevert"
+    },
+}
 
 
 def launch_setup(context, *args, **kwargs):
@@ -112,34 +133,56 @@ def launch_setup(context, *args, **kwargs):
     camera_type = LaunchConfig('camera_type').perform(context)
     if not parameter_file:
         parameter_file = PathJoinSubstitution(
-            [FindPackageShare('spinnaker_camera_driver'), 'config',
-             camera_type + '.yaml'])
+            [FindPackageShare('spinnaker_camera_driver'), 'config', camera_type + '.yaml']
+        )
     if camera_type not in example_parameters:
         raise Exception('no example parameters available for type ' + camera_type)
 
-    node = Node(package='spinnaker_camera_driver',
-                executable='camera_driver_node',
-                output='screen',
-                name=[LaunchConfig('camera_name')],
-                parameters=[example_parameters[camera_type],
-                            {'ffmpeg_image_transport.encoding': 'hevc_nvenc',
-                             'parameter_file': parameter_file,
-                             'serial_number': [LaunchConfig('serial')]}],
-                remappings=[('~/control', '/exposure_control/control'), ])
+    node = Node(
+        package='spinnaker_camera_driver',
+        executable='camera_driver_node',
+        output='screen',
+        name=[LaunchConfig('camera_name')],
+        parameters=[
+            example_parameters[camera_type],
+            {
+                'ffmpeg_image_transport.encoding': 'hevc_nvenc',
+                'parameter_file': parameter_file,
+                'serial_number': [LaunchConfig('serial')],
+            },
+        ],
+        remappings=[
+            ('~/control', '/exposure_control/control'),
+        ],
+    )
 
     return [node]
 
 
 def generate_launch_description():
     """Create composable node by calling opaque function."""
-    return LaunchDescription([
-        LaunchArg('camera_name', default_value=['flir_camera'],
-                  description='camera name (ros node name)'),
-        LaunchArg('camera_type', default_value='blackfly_s',
-                  description='type of camera (blackfly_s, chameleon...)'),
-        LaunchArg('serial', default_value="'20435008'",
-                  description='FLIR serial number of camera (in quotes!!)'),
-        LaunchArg('parameter_file', default_value='',
-                  description='path to ros parameter definition file (override camera type)'),
-        OpaqueFunction(function=launch_setup)
-        ])
+    return LaunchDescription(
+        [
+            LaunchArg(
+                'camera_name',
+                default_value=['flir_camera'],
+                description='camera name (ros node name)',
+            ),
+            LaunchArg(
+                'camera_type',
+                default_value='blackfly_s',
+                description='type of camera (blackfly_s, chameleon...)',
+            ),
+            LaunchArg(
+                'serial',
+                default_value="'20435008'",
+                description='FLIR serial number of camera (in quotes!!)',
+            ),
+            LaunchArg(
+                'parameter_file',
+                default_value='',
+                description='path to ros parameter definition file (override camera type)',
+            ),
+            OpaqueFunction(function=launch_setup),
+        ]
+    )
