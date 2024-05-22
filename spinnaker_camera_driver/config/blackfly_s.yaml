@@ -6,6 +6,20 @@
 
 parameters:
   #
+  # -------- user set control
+  #
+  - name: default_user_set
+    type: enum
+    # allowed values: UserSet0 UserSet1
+    node: UserSetControl/DefaultUserSet
+  - name: user_set_selector
+    type: enum
+    # allowed values: UserSet0 UserSet1
+    node: UserSetControl/UserSetSelector
+  - name: user_set_load
+    type: command
+    node: UserSetControl/UserSetLoad
+  #
   # -------- image format control
   #
   - name: pixel_format
