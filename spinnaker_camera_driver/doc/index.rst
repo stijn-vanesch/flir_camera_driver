@@ -184,6 +184,20 @@ that you can customize as needed.
    ros2 launch spinnaker_camera_driver driver_node.launch.py camera_type:=blackfly_s serial:="'20435008'"
 
 
+Using multiple cameras at the same time
+=======================================
+
+The FLIR Spinnaker does not support two programs accessing the Spinnaker SDK at the same time,
+even if two different cameras are accessed. Strange things happen, in particular with USB3 cameras.
+You can however run multiple cameras in the same
+address space using ROS2's Composable Node concept, see the example
+launch file ``multiple_cameras.launch.py``.
+
+If you are using hardware synchronized cameras please use the ``spinnaker_synchronized_camera_driver``,
+which will associate the images triggered by the same sync pulse with each other
+and give them identical time stamps.
+
+
 About time stamps
 =================
 
