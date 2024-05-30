@@ -119,7 +119,7 @@ Exposure controller parameters
 Example usage
 -------------
 
-The driver comes with two example launch files that need to be modified for your purposes (update serial numbers etc).
+The driver comes with several example launch files that need to be modified for your purposes (update serial numbers etc).
 The ``follower_example.launch.py`` can be used as template for stereo cameras, the ``master_example.launch.py`` for situations
 where each camera should run their own exposure control.
 
@@ -132,6 +132,10 @@ Carefully examine the camera parameters that are set in the launch file, in part
 - ``compute_brightness`` must be true for any camera governed by a master controller.
 - ``exposure_auto`` must be off (disable the individual camera controller).
 - ``chunk_mode_active`` must be true, and chunk exposure time, gain and frame id must be enabled
+
+For the special case where one camera (primary) triggers the sync pulse of a secondary camera, see
+the example launch file ``primary_secondary.launch.py``. If you don't use Blackfly S cameras you will have
+to adjust the digital I/O parameters.
 
 
 Known issues
