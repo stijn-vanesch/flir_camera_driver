@@ -37,9 +37,10 @@ Platforms
 ---------
 
 -  ROS2 Galactic under Ubuntu 20.04 LTS (no longer actively tested)
--  ROS2 Humble/Iron/Rolling under Ubuntu 22.04 LTS
+-  ROS2 Humble/Iron under Ubuntu 22.04 LTS
+   ROS2 Rolling/Jazzy under Ubuntu 24.04 LTS
 -  Spinnaker 3.1.0.79 (other versions may work as well but this is what
-   the continuous integration builds are using)o
+   the continuous integration builds are using)
 
 How to install
 ==============
@@ -349,14 +350,21 @@ Setting up Linux without Spinnaker SDK
 Only use these instructions if you did not install the Spinnaker SDK on
 your machine.
 
-1) Add the “flirimaging” group and make yourself a member of it
+1) Somewhere in your ``.bashrc`` file, set the following env variable:
+
+.. code::
+
+   export
+   SPINNAKER_GENTL64_CTI=/opt/ros/${ROS_DISTRO}/lib/spinnaker-gentl/Spinnaker_GenTL.cti
+
+2) Add the “flirimaging” group and make yourself a member of it
 
 .. code::
 
    sudo addgroup flirimaging
    sudo usermod -a -G flirimaging ${USER}
 
-2) Bump the usbfs memory limits
+3) Bump the usbfs memory limits
 
 The following was taken from
 `here <https://www.flir.com/support-center/iis/machine-vision/application-note/using-linux-with-usb-3.1/>`__.
@@ -383,7 +391,7 @@ write the following text to it:
 
    exit 0
 
-3) Setup udev rules
+4) Setup udev rules
 
 .. code::
 
@@ -392,7 +400,7 @@ write the following text to it:
    sudo service udev restart
    sudo udevadm trigger
 
-4) Logout and log back in (or better, reboot)
+5) Logout and log back in (or better, reboot)
 
 ``sudo reboot``
 
