@@ -62,6 +62,19 @@ example_parameters = {
         'chunk_selector_timestamp': 'Timestamp',
         'chunk_enable_timestamp': True,
     },
+    'blackfly': {
+        'debug': True,
+        'dump_node_map': True,
+        'gain_auto': 'Continuous',
+        'pixel_format': 'BayerRG8',
+        'exposure_auto': 'Continuous',
+        'frame_rate_auto': 'Off',
+        'frame_rate': 40.0,
+        'frame_rate_enable': True,
+        'buffer_queue_size': 10,
+        'trigger_mode': 'Off',
+        'stream_buffer_handling_mode': 'NewestFirst'
+    },
     'chameleon': {
         'debug': False,
         'compute_brightness': False,
