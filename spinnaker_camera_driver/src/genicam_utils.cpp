@@ -94,9 +94,19 @@ static std::optional<CNodePtr> find_node(
 std::optional<CNodePtr> find_node(
   const std::string & path, Spinnaker::CameraPtr cam, bool debug, bool allow_unreadable)
 {
-  INodeMap & appLayerNodeMap = cam->GetNodeMap();
-  CNodePtr rootNode = appLayerNodeMap.GetNode("Root");
-  return (find_node(path, rootNode, debug, allow_unreadable));
+  CNodePtr rootNode = cam->GetNodeMap().GetNode("Root");
+  std::optional<CNodePtr> nodeptr = find_node(path, rootNode, debug, allow_unreadable);
+  if (nodeptr) {
+    return (nodeptr);
+  }
+  rootNode = cam->GetTLStreamNodeMap().GetNode("Root");
+  nodeptr = find_node(path, rootNode, debug, allow_unreadable);
+  if (nodeptr) {
+    return (nodeptr);
+  }
+  rootNode = cam->GetTLDeviceNodeMap().GetNode("Root");
+  nodeptr = find_node(path, rootNode, debug, allow_unreadable);
+  return (nodeptr);
 }
 }  // namespace genicam_utils
 }  // namespace spinnaker_camera_driver

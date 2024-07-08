@@ -63,8 +63,8 @@ example_parameters = {
         'chunk_enable_timestamp': True,
     },
     'blackfly': {
-        'debug': True,
-        'dump_node_map': True,
+        'debug': False,
+        'dump_node_map': False,
         'gain_auto': 'Continuous',
         'pixel_format': 'BayerRG8',
         'exposure_auto': 'Continuous',
@@ -73,7 +73,8 @@ example_parameters = {
         'frame_rate_enable': True,
         'buffer_queue_size': 10,
         'trigger_mode': 'Off',
-        'stream_buffer_handling_mode': 'NewestFirst'
+        # 'stream_buffer_handling_mode': 'NewestFirst',
+        # 'multicast_monitor_mode': False
     },
     'chameleon': {
         'debug': False,

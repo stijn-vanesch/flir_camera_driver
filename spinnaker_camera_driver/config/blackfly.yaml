@@ -172,3 +172,16 @@ parameters:
   - name: chunk_enable_timestamp
     type: bool
     node: ChunkDataControl/ChunkEnable
+  #
+  # ------- stream layer
+  #
+  - name: "stream_buffer_handling_mode"
+    type: enum
+    # valid values: "NewestFirst", "OldestFirst", "NewestOnly", "OldestFirstOverwrite"
+    node: BufferHandlingControl/StreamBufferHandlingMode
+  #
+  # ------- transport layer
+  #
+  - name: "multicast_monitor_mode"
+    type: bool
+    node: "DeviceControl/DeviceMulticastMonitorMode"
