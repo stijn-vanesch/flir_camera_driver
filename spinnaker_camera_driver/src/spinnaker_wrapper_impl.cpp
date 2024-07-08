@@ -18,6 +18,7 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <spinnaker_camera_driver/logging.hpp>
 #include <string>
 #include <vector>
 
@@ -104,10 +105,51 @@ SpinnakerWrapperImpl::SpinnakerWrapperImpl()
 
 void SpinnakerWrapperImpl::refreshCameraList()
 {
-  cameraList_ = system_->GetCameras();
-  for (size_t cam_idx = 0; cam_idx < cameraList_.GetSize(); cam_idx++) {
-    const auto cam = cameraList_[cam_idx];
-  }
+  cameraList_.Clear();
+
+  Spinnaker::InterfaceList interfaceList = system_->GetInterfaces();
+
+  for (size_t i = 0; i < interfaceList.GetSize(); i++) {
+    Spinnaker::InterfacePtr iface = interfaceList.GetByIndex(i);
+
+    Spinnaker::GenApi::INodeMap & nodeMapInterface = iface->GetTLNodeMap();
+
+    Spinnaker::GenApi::CEnumerationPtr ptrInterfaceType = nodeMapInterface.GetNode("InterfaceType");
+
+    if (IsAvailable(ptrInterfaceType) && IsReadable(ptrInterfaceType)) {
+      Spinnaker::GenApi::CStringPtr ptrInterfaceDisplayName =
+        nodeMapInterface.GetNode("InterfaceDisplayName");
+
+      if (IsAvailable(ptrInterfaceDisplayName) && IsReadable(ptrInterfaceDisplayName)) {
+        Spinnaker::GenICam::gcstring interfaceDisplayName = ptrInterfaceDisplayName->GetValue();
+
+        Spinnaker::CameraList camList = iface->GetCameras();
+
+        for (size_t cam_idx = 0; cam_idx < camList.GetSize(); cam_idx++) {
+          // try open the cameras in a specific interface
+          Spinnaker::CameraPtr ptrCam = camList.GetByIndex(cam_idx);
+          try {
+            ptrCam->Init();
+            ptrCam->DeInit();
+          } catch (Spinnaker::Exception & e) {
+            // erro while open the cameras in this interface
+            continue;
+          }  // end try-catch ptrCam
+
+          // successfully open the camera in the interface
+          cameraList_.Add(ptrCam);
+
+          LOG_INFO_FMT(
+            "Found camera [serial: %s] from: [%s]", get_serial(ptrCam).c_str(),
+            interfaceDisplayName.c_str());
+        }  // end for camList
+      } else {
+        LOG_ERROR("Unknown Interface (Display name not readable)");
+      }  // end if-else ptrInterfaceDisplayName
+    }    // end if ptrInterfaceType
+  }      // end for interfaceList
+
+  interfaceList.Clear();
 }
 
 SpinnakerWrapperImpl::~SpinnakerWrapperImpl()

@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <mutex>
+#include <rclcpp/rclcpp.hpp>
 #include <spinnaker_camera_driver/image.hpp>
 #include <spinnaker_camera_driver/spinnaker_wrapper.hpp>
 #include <string>
@@ -66,6 +67,8 @@ private:
   void setPixelFormat(const std::string & pixFmt);
   bool setInINodeMap(double f, const std::string & field, double * fret);
   void monitorStatus();
+
+  rclcpp::Logger get_logger() { return rclcpp::get_logger("Spinnaker Wrapper"); }
 
   // ----- variables --
   Spinnaker::SystemPtr system_;
