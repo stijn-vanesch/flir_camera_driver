@@ -65,6 +65,16 @@ message(STATUS "libSpinnaker include location: ${SPINNAKER_INCLUDE_DIRS}")
 
 find_package(SPINNAKER REQUIRED)
 
+# special case the older Spinnaker API
+if(DEFINED ENV{ROS_DISTRO})
+  if($ENV{ROS_DISTRO} STREQUAL "foxy" OR
+      $ENV{ROS_DISTRO} STREQUAL "galactic")
+    add_definitions(-DUSE_OLD_SPINNAKER_API)
+  endif()
+else()
+  message(FATAL_ERROR "ROS_DISTRO environment variable is not set!")
+endif()
+
 include_directories(SYSTEM
   ${SPINNAKER_INCLUDE_DIRS})
 
@@ -78,7 +88,6 @@ set(ROS_DEPENDENCIES
   "camera_info_manager"
   "image_transport"
   "flir_camera_msgs")
-
 
 # find dependencies
 find_package(ament_cmake REQUIRED)

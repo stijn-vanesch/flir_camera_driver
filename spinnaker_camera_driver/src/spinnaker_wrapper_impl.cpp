@@ -105,6 +105,12 @@ SpinnakerWrapperImpl::SpinnakerWrapperImpl()
 
 void SpinnakerWrapperImpl::refreshCameraList()
 {
+#ifdef USE_OLD_SPINNAKER_API
+  cameraList_ = system_->GetCameras();
+  for (size_t cam_idx = 0; cam_idx < cameraList_.GetSize(); cam_idx++) {
+    const auto cam = cameraList_[cam_idx];
+  }
+#else
   cameraList_.Clear();
 
   Spinnaker::InterfaceList interfaceList = system_->GetInterfaces();
@@ -150,6 +156,7 @@ void SpinnakerWrapperImpl::refreshCameraList()
   }      // end for interfaceList
 
   interfaceList.Clear();
+#endif
 }
 
 SpinnakerWrapperImpl::~SpinnakerWrapperImpl()
