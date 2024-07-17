@@ -19,4 +19,4 @@ Please cut-and-paste console output into this bug report. Do not attach screensh
 **System details**
 - operating system/version:
 - ROS version (please prepend to issue title in square brackets, e.g. [noetic]):
-- camera model:
+- complete FLIR camera model (e.g. BFS-U3-04S2C-C):
