@@ -223,11 +223,11 @@ Blackfly S the parameters look like this:
 
 
 Network Configuration for GigE cameras
-=======================
+======================================
 
 The Spinnaker SDK abstracts away the transport layer so a GigE camera
 should work the same way as USB3: you point it to the serial number and
-you’re set.
+you're set.
 
 There are a few GigE-specific settings in the Transport Layer Control
 group that are important, in particular enabling jumbo frames from the
@@ -342,6 +342,36 @@ Known issues
    possibly crash. This issue can be avoided by running all drivers in
    the same address space with a composable node (see stereo launch file
    for example).
+
+Troubleshooting/Common Issues
+=============================
+
+1) Driver doesn't find camera.
+   This is usually due to incorrect permissions, missing udev files etc. Install the Spinnaker SDK
+   and get SpinView to work.
+
+2) Driver doesn't publish images and/or warns about incomplete images for GigE cameras
+
+   .. code::
+
+      rate [Hz] in  39.76 out   0.00 drop   0% INCOMPLETE 100%
+
+   The reason for the incomplete images is usually that you are exceeding the network
+   bandwidth, causing packets to be dropped such that incomplete frames arrive at the host.
+   Check for the MTU on all network cards and switches to be 9000 (jumbo frames). Sometimes
+   the MTU for switches has to be set higher. Also make sure the GigE camera has jumbo frames
+   enabled, i.e. ``gev_scps_packet_size`` is set to 9000.
+
+3) Driver reports dropped packages. This means the connected subscriber is not picking up fast enough.
+   Check CPU utilization of subscribers and the available network bandwidth between driver and subscriber.
+
+4) Image seems laggy when viewed. This is usually not a camera driver issue, but related to ROS2 RMW
+   or the image viewer. Check CPU utilization on displaying host and network bandwidth.
+
+5) Camera doesn't reach desired frame rate.
+   First play around in SpinView to reproduce the problem there. For GigE cameras, check network bandwidth.
+   Switch to Bayer images to reduce network bandwidth by a factor of three.
+   Check your exposure time. The frame rate cannot exceed the inverse of the exposure time.
 
 
 Setting up Linux without Spinnaker SDK

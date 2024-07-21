@@ -151,9 +151,9 @@ void SpinnakerWrapperImpl::refreshCameraList()
         }  // end for camList
       } else {
         LOG_ERROR("Unknown Interface (Display name not readable)");
-      }  // end if-else ptrInterfaceDisplayName
-    }    // end if ptrInterfaceType
-  }      // end for interfaceList
+      }
+    }
+  }
 
   interfaceList.Clear();
 #endif
@@ -316,6 +316,15 @@ double SpinnakerWrapperImpl::getReceiveFrameRate() const
   return (avgTimeInterval_ > 0 ? (1.0 / avgTimeInterval_) : 0);
 }
 
+double SpinnakerWrapperImpl::getIncompleteRate()
+{
+  const double r =
+    numImagesTotal_ == 0 ? 0 : (numIncompleteImagesTotal_ / static_cast<double>(numImagesTotal_));
+  numImagesTotal_ = 0;
+  numIncompleteImagesTotal_ = 0;
+  return (r);
+}
+
 static int int_ceil(size_t x, int y)
 {
   // compute the integer ceil(x / y)
@@ -358,14 +367,10 @@ void SpinnakerWrapperImpl::OnImageEvent(Spinnaker::ImagePtr imgPtr)
     std::unique_lock<std::mutex> lock(mutex_);
     lastTime_ = t;
   }
-
+  numImagesTotal_++;
   if (imgPtr->IsIncomplete()) {
     numIncompleteImages_++;
-#if 0
-    // Retrieve and print the image status description
-    std::cout << "Image incomplete: "
-              << Spinnaker::Image::GetImageStatusDescription(imgPtr->GetImageStatus()) << std::endl;
-#endif
+    numIncompleteImagesTotal_++;
   } else {
     float expTime = 0;
     float gain = 0;

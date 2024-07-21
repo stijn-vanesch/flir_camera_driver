@@ -52,6 +52,7 @@ double SpinnakerWrapper::getReceiveFrameRate() const
 {
   return (wrapperImpl_->getReceiveFrameRate());
 }
+double SpinnakerWrapper::getIncompleteRate() { return (wrapperImpl_->getIncompleteRate()); }
 
 std::string SpinnakerWrapper::getNodeMapAsString() { return (wrapperImpl_->getNodeMapAsString()); }
 

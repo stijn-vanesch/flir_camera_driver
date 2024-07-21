@@ -54,6 +54,7 @@ public:
 
   std::string getPixelFormat() const;
   double getReceiveFrameRate() const;
+  double getIncompleteRate();
   std::string getNodeMapAsString();
   std::string setEnum(const std::string & nodeName, const std::string & val, std::string * retVal);
   std::string setDouble(const std::string & nodeName, double val, double * retVal);

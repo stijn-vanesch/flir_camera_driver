@@ -165,11 +165,18 @@ void Camera::printStatus()
                          : 0;
     const rclcpp::Time t = node_->now();
     const rclcpp::Duration dt = t - lastStatusTime_;
-    double dtns = std::max(dt.nanoseconds(), (int64_t)1);
-    double outRate = publishedCount_ * 1e9 / dtns;
-    LOG_INFO_FMT(
-      "rate [Hz] in %6.2f out %6.2f drop %3.0f%%", wrapper_->getReceiveFrameRate(), outRate,
-      dropRate * 100);
+    const double dtns = std::max(dt.nanoseconds(), (int64_t)1);
+    const double outRate = publishedCount_ * 1e9 / dtns;
+    const double incompleteRate = wrapper_->getIncompleteRate();
+    if (incompleteRate != 0) {
+      LOG_WARN_FMT(
+        "rate [Hz] in %6.2f out %6.2f drop %3.0f%% INCOMPLETE %3.0f%%",
+        wrapper_->getReceiveFrameRate(), outRate, dropRate * 100, incompleteRate * 100);
+    } else {
+      LOG_INFO_FMT(
+        "rate [Hz] in %6.2f out %6.2f drop %3.0f%%", wrapper_->getReceiveFrameRate(), outRate,
+        dropRate * 100);
+    }
     lastStatusTime_ = t;
     droppedCount_ = 0;
     publishedCount_ = 0;

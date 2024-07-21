@@ -39,6 +39,10 @@
   {                                                \
     RCLCPP_WARN_STREAM(get_logger(), __VA_ARGS__); \
   }
+#define LOG_WARN_FMT(...)                   \
+  {                                         \
+    RCLCPP_WARN(get_logger(), __VA_ARGS__); \
+  }
 #define LOG_ERROR(...)                              \
   {                                                 \
     RCLCPP_ERROR_STREAM(get_logger(), __VA_ARGS__); \
