@@ -105,58 +105,10 @@ SpinnakerWrapperImpl::SpinnakerWrapperImpl()
 
 void SpinnakerWrapperImpl::refreshCameraList()
 {
-#ifdef USE_OLD_SPINNAKER_API
   cameraList_ = system_->GetCameras();
   for (size_t cam_idx = 0; cam_idx < cameraList_.GetSize(); cam_idx++) {
     const auto cam = cameraList_[cam_idx];
   }
-#else
-  cameraList_.Clear();
-
-  Spinnaker::InterfaceList interfaceList = system_->GetInterfaces();
-
-  for (size_t i = 0; i < interfaceList.GetSize(); i++) {
-    Spinnaker::InterfacePtr iface = interfaceList.GetByIndex(i);
-
-    Spinnaker::GenApi::INodeMap & nodeMapInterface = iface->GetTLNodeMap();
-
-    Spinnaker::GenApi::CEnumerationPtr ptrInterfaceType = nodeMapInterface.GetNode("InterfaceType");
-
-    if (IsAvailable(ptrInterfaceType) && IsReadable(ptrInterfaceType)) {
-      Spinnaker::GenApi::CStringPtr ptrInterfaceDisplayName =
-        nodeMapInterface.GetNode("InterfaceDisplayName");
-
-      if (IsAvailable(ptrInterfaceDisplayName) && IsReadable(ptrInterfaceDisplayName)) {
-        Spinnaker::GenICam::gcstring interfaceDisplayName = ptrInterfaceDisplayName->GetValue();
-
-        Spinnaker::CameraList camList = iface->GetCameras();
-
-        for (size_t cam_idx = 0; cam_idx < camList.GetSize(); cam_idx++) {
-          // try open the cameras in a specific interface
-          Spinnaker::CameraPtr ptrCam = camList.GetByIndex(cam_idx);
-          try {
-            ptrCam->Init();
-            ptrCam->DeInit();
-          } catch (Spinnaker::Exception & e) {
-            // erro while open the cameras in this interface
-            continue;
-          }  // end try-catch ptrCam
-
-          // successfully open the camera in the interface
-          cameraList_.Add(ptrCam);
-
-          LOG_INFO_FMT(
-            "Found camera [serial: %s] from: [%s]", get_serial(ptrCam).c_str(),
-            interfaceDisplayName.c_str());
-        }  // end for camList
-      } else {
-        LOG_ERROR("Unknown Interface (Display name not readable)");
-      }
-    }
-  }
-
-  interfaceList.Clear();
-#endif
 }
 
 SpinnakerWrapperImpl::~SpinnakerWrapperImpl()
@@ -425,13 +377,41 @@ bool SpinnakerWrapperImpl::initCamera(const std::string & serialNumber)
   if (camera_) {
     return false;
   }
-  for (size_t cam_idx = 0; cam_idx < cameraList_.GetSize(); cam_idx++) {
-    auto cam = cameraList_.GetByIndex(cam_idx);
-    const std::string sn = get_serial(cam);
-    if (sn == serialNumber) {
-      camera_ = cam;
-      camera_->Init();
-      break;
+  const auto interfaceList = system_->GetInterfaces();
+
+  for (size_t i = 0; i < interfaceList.GetSize(); i++) {
+    const auto iface = interfaceList.GetByIndex(i);
+    const auto & nodeMapInterface = iface->GetTLNodeMap();
+    const auto ptrInterfaceType = nodeMapInterface.GetNode("InterfaceType");
+
+    if (IsAvailable(ptrInterfaceType) && IsReadable(ptrInterfaceType)) {
+      const Spinnaker::GenApi::CStringPtr ptrInterfaceDisplayName =
+        nodeMapInterface.GetNode("InterfaceDisplayName");
+
+      if (IsAvailable(ptrInterfaceDisplayName) && IsReadable(ptrInterfaceDisplayName)) {
+        const auto interfaceDisplayName = ptrInterfaceDisplayName->GetValue();
+        const auto camList = iface->GetCameras();
+        for (size_t cam_idx = 0; cam_idx < camList.GetSize(); cam_idx++) {
+          // try open the cameras in a specific interface
+          Spinnaker::CameraPtr ptrCam = camList.GetByIndex(cam_idx);
+          const auto serial = get_serial(ptrCam);
+          if (serial == serialNumber) {
+            try {
+              ptrCam->Init();
+              LOG_INFO_FMT(
+                "Initialized camera [serial: %s] from: [%s]", serialNumber.c_str(),
+                interfaceDisplayName.c_str());
+              camera_ = ptrCam;
+              return (true);
+            } catch (Spinnaker::Exception & e) {
+              // error while open the cameras in this interface
+              ptrCam->DeInit();
+            }
+          }
+        }
+      } else {
+        LOG_ERROR("Unknown Interface (Display name not readable)");
+      }
     }
   }
   return (camera_ != 0);
