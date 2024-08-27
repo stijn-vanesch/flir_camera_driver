@@ -1,34 +1,44 @@
-// Source file of the camera lifecycle node
-
-#include <image_transport/image_transport.hpp>
 #include <spinnaker_camera_driver/camera_lifecycle.hpp>
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 
-CameraLifecycle::CameraLifecycle(const std::string &node_name)
-      : rclcpp_lifecycle::LifecycleNode(node_name,
-          rclcpp::NodeOptions()
-              .use_intra_process_comms(false)
-              .allow_undeclared_parameters(true)
-              .automatically_declare_parameters_from_overrides(true))
+CameraLifecycle::CameraLifecycle(const std::string & node_name, const rclcpp::NodeOptions & options)
+      : rclcpp_lifecycle::LifecycleNode(node_name, options)
               
 {
-    RCLCPP_INFO(get_logger(), "Node '%s' has been created.", get_name());
-    camera_ = std::make_shared<spinnaker_camera_driver::Camera>(this, "");
-}
-CameraLifecycle::~CameraLifecycle() {}
+  camera_ = std::make_shared<spinnaker_camera_driver::Camera>(this, "");
 
+  if (!camera_->start()) {
+    std::cout << "startup failed!" << std::endl;
+  }
+}
 
 LifecycleCallbackReturn CameraLifecycle::on_configure(const rclcpp_lifecycle::State &)
-  {
-    RCLCPP_INFO(get_logger(), "on_configure() has been called.");
+{
+  RCLCPP_INFO(get_logger(), "on_configure() has been called.");
 
-    return LifecycleCallbackReturn::SUCCESS;
+  if (!camera_->configure()) {
+    RCLCPP_ERROR(get_logger(), "camera configuration failed.");
+    return LifecycleCallbackReturn::FAILURE;
   }
+  RCLCPP_INFO(get_logger(), "camera parameters read.");
+
+  camera_->startWrapper();
+
+  // TODO start publishers, subscribers
+
+
+  return LifecycleCallbackReturn::SUCCESS;
+}
 
 LifecycleCallbackReturn CameraLifecycle::on_activate(const rclcpp_lifecycle::State &)
   {
     RCLCPP_INFO(get_logger(), "on_activate() has been called.");
+
+    if (!camera_->connectToCamera()) {
+      RCLCPP_ERROR(get_logger(), "camera connection failed.");
+      return LifecycleCallbackReturn::FAILURE;
+    }
+    
 
     return LifecycleCallbackReturn::SUCCESS;
   } 
@@ -55,32 +65,3 @@ LifecycleCallbackReturn CameraLifecycle::on_error(const rclcpp_lifecycle::State 
 
     return LifecycleCallbackReturn::SUCCESS;
   } 
-
-// Initialize Camera Class
-// std::shared_ptr<spinnaker_camera_driver::Camera> camera_;
-
-// int main(int argc, char * argv[])
-int main()
-{
-  // force flush of the stdout buffer.
-  // this ensures a correct sync of all prints
-  // even when executed simultaneously within the launch file.
-//   setvbuf(stdout, NULL, _IONBF, BUFSIZ);
-
-  // rclcpp::init(argc, argv);
-
-  // rclcpp::executors::SingleThreadedExecutor exe;
-
-//   std::shared_ptr<LifecycleTalker> lc_node =
-//     std::make_shared<LifecycleTalker>("lc_talker");
-
-//   exe.add_node(lc_node->get_node_base_interface());
-
-//   exe.spin();
-
-//   rclcpp::shutdown();
-
-    std::cout << "Test Message" << std::endl;
-
-  return 0;
-}

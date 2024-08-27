@@ -1,17 +1,15 @@
+#pragma once
 
 #include <memory>
-#include <image_transport/image_transport.hpp>
-#include <spinnaker_camera_driver/camera.hpp>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include <spinnaker_camera_driver/camera.hpp>
 
 using LifecycleCallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 class CameraLifecycle : public rclcpp_lifecycle::LifecycleNode
 {
 public:
-    explicit CameraLifecycle(const std::string &node_name);
-    ~CameraLifecycle();
+    explicit CameraLifecycle(const std::string & node_name, const rclcpp::NodeOptions & options);
 
 private:
   std::shared_ptr<spinnaker_camera_driver::Camera> camera_;
@@ -26,3 +24,4 @@ private:
 
   LifecycleCallbackReturn on_error(const rclcpp_lifecycle::State &state);
 };
+
