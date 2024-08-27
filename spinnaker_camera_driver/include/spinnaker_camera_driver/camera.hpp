@@ -20,7 +20,7 @@
 #include <deque>
 #include <flir_camera_msgs/msg/camera_control.hpp>
 #include <flir_camera_msgs/msg/image_meta_data.hpp>
-#include <image_transport/image_transport.hpp>
+// #include <image_transport/image_transport.hpp>
 #include <limits>
 #include <map>
 #include <memory>
@@ -33,6 +33,8 @@
 #include <std_msgs/msg/float64.hpp>
 #include <thread>
 
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace spinnaker_camera_driver
 {
 class ExposureController;  // forward decl
@@ -41,12 +43,14 @@ class Camera
 public:
   using ImageConstPtr = spinnaker_camera_driver::ImageConstPtr;
   explicit Camera(
-    rclcpp::Node * node, image_transport::ImageTransport * it, const std::string & prefix,
+    rclcpp_lifecycle::LifecycleNode * node, const std::string & prefix,
     bool useStatus = true);
   ~Camera();
 
   bool start();
   bool stop();
+  bool configure();
+  void startWrapper();
   void setSynchronizer(const std::shared_ptr<Synchronizer> & s) { synchronizer_ = s; }
   void setExposureController(const std::shared_ptr<ExposureController> & e)
   {
@@ -55,7 +59,6 @@ public:
   const std::string & getName() const { return (name_); }
   const std::string & getPrefix() const { return (prefix_); }
 
-private:
   struct NodeInfo
   {
     enum NodeType { INVALID, ENUM, FLOAT, INT, BOOL, COMMAND };
@@ -70,6 +73,7 @@ private:
   void startCamera();
   bool stopCamera();
   void createCameraParameters();
+  bool connectToCamera();
   void setParameter(const NodeInfo & ni, const rclcpp::Parameter & p);
   bool setEnum(const std::string & nodeName, const std::string & v = "");
   bool setDouble(const std::string & nodeName, double v);
@@ -120,13 +124,15 @@ private:
       // do nothing
     }
   }
-
+private:
   // ----- variables --
   std::string prefix_;
   std::string topicPrefix_;
-  rclcpp::Node * node_;
-  image_transport::ImageTransport * imageTransport_;
-  image_transport::CameraPublisher pub_;
+  rclcpp_lifecycle::LifecycleNode * node_;
+  // image_transport::ImageTransport * imageTransport_;
+  // image_transport::CameraPublisher pub_;
+
+  
   rclcpp::Publisher<flir_camera_msgs::msg::ImageMetaData>::SharedPtr metaPub_;
   std::string serial_;
   std::string name_;
@@ -149,7 +155,7 @@ private:
   int64_t baseTimeOffset_{0};
   float currentGain_{std::numeric_limits<float>::lowest()};
   std::shared_ptr<spinnaker_camera_driver::SpinnakerWrapper> wrapper_;
-  std::shared_ptr<camera_info_manager::CameraInfoManager> infoManager_;
+  // std::shared_ptr<camera_info_manager::CameraInfoManager> infoManager_;
   sensor_msgs::msg::Image imageMsg_;
   sensor_msgs::msg::CameraInfo cameraInfoMsg_;
   flir_camera_msgs::msg::ImageMetaData metaMsg_;
