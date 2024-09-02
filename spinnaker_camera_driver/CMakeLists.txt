@@ -73,6 +73,7 @@ include_directories(SYSTEM
 set(ROS_DEPENDENCIES
   "rclcpp"
   "rclcpp_components"
+  "rclcpp_lifecycle"
   "sensor_msgs"
   "std_msgs"
   "camera_info_manager"
@@ -94,6 +95,7 @@ find_package(yaml-cpp REQUIRED)
 
 add_library(camera_driver SHARED
   src/camera_driver.cpp
+  src/camera_lifecycle.cpp
   src/camera.cpp
   src/spinnaker_wrapper.cpp
   src/spinnaker_wrapper_impl.cpp
