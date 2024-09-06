@@ -16,15 +16,23 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <spinnaker_camera_driver/camera_driver.hpp>
+#include <spinnaker_camera_driver/camera_lifecycle.hpp>
+
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<spinnaker_camera_driver::CameraDriver>(rclcpp::NodeOptions());
+  // auto node = std::make_shared<spinnaker_camera_driver::CameraDriver>(rclcpp::NodeOptions());
+  
+  std::shared_ptr<spinnaker_camera_driver::CameraLifecycle> cameraLifecycle = std::make_shared<spinnaker_camera_driver::CameraLifecycle>("camera_driver_node", rclcpp::NodeOptions());
+  
+  rclcpp::executors::MultiThreadedExecutor executor;
 
-  RCLCPP_INFO(node->get_logger(), "camera_driver_node started up!");
+  executor.add_node(cameraLifecycle->get_node_base_interface());
 
-  rclcpp::spin(node);  // should not return
+  executor.spin();
+
   rclcpp::shutdown();
+
   return 0;
 }

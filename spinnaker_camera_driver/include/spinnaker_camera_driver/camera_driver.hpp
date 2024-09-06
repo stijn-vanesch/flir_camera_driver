@@ -30,7 +30,8 @@ public:
   ~CameraDriver();
 
 private:
-  std::shared_ptr<image_transport::ImageTransport> imageTransport_;
+
+  void onInit();
   std::shared_ptr<Camera> camera_;
 };
 }  // namespace spinnaker_camera_driver

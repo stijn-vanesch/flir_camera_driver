@@ -19,7 +19,6 @@
 #include <cmath>
 #include <fstream>
 #include <functional>
-// #include <image_transport/image_transport.hpp>
 #include <iomanip>
 #include <iostream>
 #include <sensor_msgs/fill_image.hpp>
@@ -28,6 +27,7 @@
 #include <spinnaker_camera_driver/exposure_controller.hpp>
 #include <spinnaker_camera_driver/logging.hpp>
 #include <type_traits>
+#include "spinnaker_camera_driver/camera.hpp"
 
 namespace spinnaker_camera_driver
 {
@@ -109,20 +109,29 @@ Camera::NodeInfo::NodeInfo(const std::string & n, const std::string & nodeType) 
     descriptor = make_desc(n, rclcpp::ParameterType::PARAMETER_NOT_SET);
   }
 }
+
+template <typename NodeT>
 Camera::Camera(
-  rclcpp_lifecycle::LifecycleNode * node, const std::string & prefix,
+  NodeT node, const std::string & prefix,
   bool useStatus)
 {
-  node_ = node;
+
+  node_base = node->get_node_base_interface();
+  node_timer = node->get_node_timers_interface();
+  node_clock = node->get_node_clock_interface();
+  node_logging = node->get_node_logging_interface();
+  node_parameters = node->get_node_parameters_interface();
+  node_topics = node->get_node_topics_interface();
+
   name_ = prefix;
-  // imageTransport_ = it;
   prefix_ = prefix.empty() ? std::string("") : (prefix + ".");
   topicPrefix_ = prefix.empty() ? std::string("") : (prefix + "/");
-  lastStatusTime_ = node_->now();
+  lastStatusTime_ = node_clock->get_clock()->now();
   if (useStatus) {
     statusTimer_ = rclcpp::create_timer(
-      node_, node_->get_clock(), rclcpp::Duration(5, 0), std::bind(&Camera::printStatus, this));
+      node_base, node_timer, node_clock->get_clock(), rclcpp::Duration(5, 0), std::bind(&Camera::printStatus, this));
   }
+
 }
 
 Camera::~Camera()
@@ -163,7 +172,7 @@ void Camera::printStatus()
     const double dropRate =
       (queuedCount_ > 0) ? (static_cast<double>(droppedCount_) / static_cast<double>(queuedCount_))
                          : 0;
-    const rclcpp::Time t = node_->now();
+    const rclcpp::Time t = node_clock->get_clock()->now();
     const rclcpp::Duration dt = t - lastStatusTime_;
     const double dtns = std::max(dt.nanoseconds(), (int64_t)1);
     const double outRate = publishedCount_ * 1e9 / dtns;
@@ -215,7 +224,7 @@ void Camera::readParameters()
   }
 
   cameraInfoURL_ = safe_declare<std::string>(prefix_ + "camerainfo_url", "");
-  frameId_ = safe_declare<std::string>(prefix_ + "frame_id", node_->get_name());
+  frameId_ = safe_declare<std::string>(prefix_ + "frame_id", node_base->get_name());
   dumpNodeMap_ = safe_declare<bool>(prefix_ + "dump_node_map", false);
   qosDepth_ = safe_declare<int>(prefix_ + "image_queue_size", 4);
   maxBufferQueueSize_ = static_cast<size_t>(safe_declare<int>(prefix_ + "buffer_queue_size", 4));
@@ -224,7 +233,7 @@ void Camera::readParameters()
   parameterFile_ = safe_declare<std::string>(prefix_ + "parameter_file", "parameters.yaml");
   connectWhileSubscribed_ = safe_declare<bool>(prefix_ + "connect_while_subscribed", false);
   enableExternalControl_ = safe_declare<bool>(prefix_ + "enable_external_control", false);
-  callbackHandle_ = node_->add_on_set_parameters_callback(
+  callbackHandle_ = node_parameters->add_on_set_parameters_callback(
     std::bind(&Camera::parameterChanged, this, std::placeholders::_1));
 }
 
@@ -511,9 +520,9 @@ void Camera::run()
       }  // -------- end of locked section
       if (img && keepRunning_ && rclcpp::ok()) {
         doPublish(img);
-        if (exposureController_) {
-          exposureController_->update(this, img);
-        }
+      //   if (exposureController_) {
+      //     exposureController_->update(this, img);
+      //   }
       }
     }
   }
@@ -553,12 +562,12 @@ static const std::unordered_map<flir_fmt, std::string> flir_2_ros{
    {flir_fmt::BGR8, ros_fmt::BGR8},
    {flir_fmt::BGRa8, ros_fmt::BGRA8}}};
 
-// static std::string flir_to_ros_encoding(const flir_fmt & pf, bool * canEncode)
-// {
-//   auto it = flir_2_ros.find(pf);
-//   *canEncode = (it != flir_2_ros.end() && it->second != "INV") && (pf != flir_fmt::INVALID);
-//   return (*canEncode ? it->second : "INV");
-// }
+static std::string flir_to_ros_encoding(const flir_fmt & pf, bool * canEncode)
+{
+  auto it = flir_2_ros.find(pf);
+  *canEncode = (it != flir_2_ros.end() && it->second != "INV") && (pf != flir_fmt::INVALID);
+  return (*canEncode ? it->second : "INV");
+}
 
 // adjust ROS header stamp using camera provided meta data
 rclcpp::Time Camera::getAdjustedTimeStamp(uint64_t t, int64_t sensorTime)
@@ -601,35 +610,38 @@ void Camera::doPublish(const ImageConstPtr & im)
     t =
       adjustTimeStamp_ ? getAdjustedTimeStamp(im->time_, im->imageTime_) : rclcpp::Time(im->time_);
   }
+  imageMsg_.header.frame_id = frameId_;
   imageMsg_.header.stamp = t;
-  // cameraInfoMsg_.header.stamp = t;
 
-  // if (pub_.getNumSubscribers() > 0) {
-  //   bool canEncode{false};
-  //   const std::string encoding = flir_to_ros_encoding(im->pixelFormat_, &canEncode);
-  //   if (!canEncode) {
-  //     LOG_WARN(
-  //       "no ROS encoding for pixel format "
-  //       << spinnaker_camera_driver::pixel_format::to_string(im->pixelFormat_));
-  //     return;
-  //   }
+  cameraInfoMsg_.header.frame_id = frameId_;
+  cameraInfoMsg_.header.stamp = t;
 
-    // sensor_msgs::msg::CameraInfo::UniquePtr cinfo(new sensor_msgs::msg::CameraInfo(cameraInfoMsg_));
+  // Populating the messages
+
+  if (imagePub_->get_subscription_count() > 0) {
+    bool canEncode{false};
+    const std::string encoding = flir_to_ros_encoding(im->pixelFormat_, &canEncode);
+    if (!canEncode) {
+      LOG_WARN(
+        "no ROS encoding for pixel format "
+        << spinnaker_camera_driver::pixel_format::to_string(im->pixelFormat_));
+      return;
+    }
+
+    sensor_msgs::msg::CameraInfo::UniquePtr cinfo(new sensor_msgs::msg::CameraInfo(cameraInfoMsg_));
   //   // will make deep copy. Do we need to? Probably...
-  //   sensor_msgs::msg::Image::UniquePtr img(new sensor_msgs::msg::Image(imageMsg_));
-  //   bool ret =
-  //     sensor_msgs::fillImage(*img, encoding, im->height_, im->width_, im->stride_, im->data_);
-  //   if (!ret) {
-  //     LOG_ERROR("fill image failed!");
-  //   } else {
-  //     // const auto t0 = node_->now();
-  //     pub_.publish(std::move(img), std::move(cinfo));
-  //     // const auto t1 = node_->now();
-  //     // std::cout << "dt: " << (t1 - t0).nanoseconds() * 1e-9 << std::endl;
-  //     publishedCount_++;
-  //   }
-  // }
+    sensor_msgs::msg::Image::UniquePtr img(new sensor_msgs::msg::Image(imageMsg_));
+    bool ret =
+      sensor_msgs::fillImage(*img, encoding, im->height_, im->width_, im->stride_, im->data_);
+    if (!ret) {
+      LOG_ERROR("fill image failed!");
+    } else {
+      imagePub_->publish(std::move(img));
+      publishedCount_++;
+    }
+  }
   if (metaPub_->get_subscription_count() != 0) {
+    metaMsg_.header.frame_id = frameId_;
     metaMsg_.header.stamp = t;
     metaMsg_.brightness = im->brightness_;
     metaMsg_.exposure_time = im->exposureTime_;
@@ -664,15 +676,39 @@ void Camera::startCamera()
 
 bool Camera::configure()
 {
-  readParameters();
-  try {
-    if (!readParameterDefinitionFile()) {
-      return (false);
-    }
-  } catch (const YAML::Exception & e) {
-    LOG_ERROR("error reading parameter definitions: " << e.what());
-    return (false);
+  // readParameters();
+  // try {
+  //   if (!readParameterDefinitionFile()) {
+  //     return (false);
+  //   }
+  // } catch (const YAML::Exception & e) {
+  //   LOG_ERROR("error reading parameter definitions: " << e.what());
+  //   return (false);
+  // }
+
+  // startWrapper();
+
+  // if (!initCamera()) {
+  //   return (false);
+  // }
+
+  // if (!setCameraParams()) {
+  //   return (false);
+  // }        
+
+  // Publishers
+  // Creating replacement publishers to overcome not usable image_transport with lifeycle nodes
+  metaPub_ = rclcpp::create_publisher<flir_camera_msgs::msg::ImageMetaData>(node_topics, "~/" + topicPrefix_ + "meta", rclcpp::QoS(1));
+  imagePub_ = rclcpp::create_publisher<sensor_msgs::msg::Image>(node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::QoS(10));
+  cameraInfoPub_ = rclcpp::create_publisher<sensor_msgs::msg::CameraInfo>(node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::QoS(10));
+
+  if (enableExternalControl_) {
+    controlSub_ = rclcpp::create_subscription<flir_camera_msgs::msg::CameraControl>(
+      node_topics,
+      "~/" + topicPrefix_ + "control", 10,
+      std::bind(&Camera::controlCallback, this, std::placeholders::_1));
   }
+
   return (true);
 }
 
@@ -687,7 +723,7 @@ void Camera::startWrapper()
 }
 
 
-bool Camera::connectToCamera()
+bool Camera::initCamera()
 {
   bool foundCamera = false;
   for (int retry = 1; retry < 6; retry++) {
@@ -708,91 +744,60 @@ bool Camera::connectToCamera()
   if (!foundCamera) {
     LOG_ERROR("giving up, camera " << serial_ << " not found!");
     return (false);
-  } else {
-    LOG_ERROR("init camera failed for cam: " << serial_);
   }
   return (true);
 }
 
-bool Camera::start()
-{
 
-//   readParameters();
-//   try {
-//     if (!readParameterDefinitionFile()) {
-//       return (false);
-//     }
-//   } catch (const YAML::Exception & e) {
-//     LOG_ERROR("error reading parameter definitions: " << e.what());
-//     return (false);
-//   }
+bool Camera::setCameraParams()
+{ 
+  if (wrapper_->initCamera(serial_)) {
+    if (dumpNodeMap_) {
+      LOG_INFO("dumping node map!");
+      std::string nm = wrapper_->getNodeMapAsString();
+      std::cout << nm;
+    }
+    // Must first create the camera parameters before acquisition is started.
+    // Some parameters (like blackfly s chunk control) cannot be set once
+    // the camera is running.
+    createCameraParameters();
 
-//   // infoManager_ = std::make_shared<camera_info_manager::CameraInfoManager>(
-//     // node_, name_.empty() ? node_->get_name() : name_, cameraInfoURL_);
-//   if (enableExternalControl_) {
-//     controlSub_ = node_->create_subscription<flir_camera_msgs::msg::CameraControl>(
-//       "~/" + topicPrefix_ + "control", 10,
-//       std::bind(&Camera::controlCallback, this, std::placeholders::_1));
-//   }
-//   metaPub_ =
-//     node_->create_publisher<flir_camera_msgs::msg::ImageMetaData>("~/" + topicPrefix_ + "meta", 1);
-
-//   // cameraInfoMsg_ = infoManager_->getCameraInfo();
-//   imageMsg_.header.frame_id = frameId_;
-//   // cameraInfoMsg_.header.frame_id = frameId_;
-//   metaMsg_.header.frame_id = frameId_;
-
-//   // pub_ = imageTransport_->advertiseCamera("~/" + topicPrefix_ + "image_raw", qosDepth_);
-
-  // wrapper_ = std::make_shared<spinnaker_camera_driver::SpinnakerWrapper>();
-//   wrapper_->setDebug(debug_);
-//   wrapper_->setComputeBrightness(computeBrightness_);
-//   wrapper_->setAcquisitionTimeout(acquisitionTimeout_);
-
-//   LOG_INFO("using spinnaker lib version: " + wrapper_->getLibraryVersion());
-//   bool foundCamera = false;
-//   for (int retry = 1; retry < 6; retry++) {
-//     wrapper_->refreshCameraList();
-//     const auto camList = wrapper_->getSerialNumbers();
-//     if (std::find(camList.begin(), camList.end(), serial_) == camList.end()) {
-//       LOG_WARN("no camera found with serial: " << serial_ << " on try # " << retry);
-//       for (const auto & cam : camList) {
-//         LOG_WARN(" found cameras: " << cam);
-//       }
-//       std::this_thread::sleep_for(chrono::seconds(1));
-//     } else {
-//       LOG_INFO("found camera with serial number: " << serial_);
-//       foundCamera = true;
-//       break;
-//     }
-//   }
-//   if (!foundCamera) {
-//     LOG_ERROR("giving up, camera " << serial_ << " not found!");
-//     return (false);
-//   }
-//   keepRunning_ = true;
-//   thread_ = std::make_shared<std::thread>(&Camera::run, this);
-
-//   if (wrapper_->initCamera(serial_)) {
-//     if (dumpNodeMap_) {
-//       LOG_INFO("dumping node map!");
-//       std::string nm = wrapper_->getNodeMapAsString();
-//       std::cout << nm;
-//     }
-//     // Must first create the camera parameters before acquisition is started.
-//     // Some parameters (like blackfly s chunk control) cannot be set once
-//     // the camera is running.
-//     createCameraParameters();
-//     if (!connectWhileSubscribed_) {
-//       startCamera();
-//     } else {
-//       checkSubscriptionsTimer_ = rclcpp::create_timer(
-//         node_, node_->get_clock(), rclcpp::Duration(1, 0),
-//         std::bind(&Camera::checkSubscriptions, this));
-//     }
-//   } else {
-//     LOG_ERROR("init camera failed for cam: " << serial_);
-//   }
+  } else {
+    LOG_ERROR("init camera failed for cam: " << serial_);
+    return (false); 
+  }
   return (true);
 }
+
+
+bool Camera::startAcquisition()
+{
+  keepRunning_ = true;
+  thread_ = std::make_shared<std::thread>(&Camera::run, this);
+  if (!connectWhileSubscribed_) {
+    startCamera();
+  } else {
+    checkSubscriptionsTimer_ = rclcpp::create_timer(
+      node_base, node_timer, node_clock->get_clock(), rclcpp::Duration(1, 0),
+      std::bind(&Camera::checkSubscriptions, this));
+  }
+  return(true);
+}
+
+
+bool Camera::stopAcquisition()
+{
+  stopCamera();
+  keepRunning_ = false;
+  if (thread_) {
+    thread_->join();
+    thread_ = 0;
+  }
+
+  return true;  
+};
+
+template Camera::Camera(rclcpp::Node::SharedPtr, const std::string &, bool);
+template Camera::Camera(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &, bool);
+
 }  // namespace spinnaker_camera_driver

@@ -20,7 +20,6 @@
 #include <deque>
 #include <flir_camera_msgs/msg/camera_control.hpp>
 #include <flir_camera_msgs/msg/image_meta_data.hpp>
-// #include <image_transport/image_transport.hpp>
 #include <limits>
 #include <map>
 #include <memory>
@@ -32,7 +31,6 @@
 #include <spinnaker_camera_driver/synchronizer.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <thread>
-
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace spinnaker_camera_driver
@@ -42,15 +40,21 @@ class Camera
 {
 public:
   using ImageConstPtr = spinnaker_camera_driver::ImageConstPtr;
+  
+  template<typename NodeT>
   explicit Camera(
-    rclcpp_lifecycle::LifecycleNode * node, const std::string & prefix,
+    NodeT node, const std::string & prefix,
     bool useStatus = true);
+
   ~Camera();
 
-  bool start();
   bool stop();
   bool configure();
   void startWrapper();
+  bool initCamera();
+  bool setCameraParams();
+  bool startAcquisition();
+  bool stopAcquisition();
   void setSynchronizer(const std::shared_ptr<Synchronizer> & s) { synchronizer_ = s; }
   void setExposureController(const std::shared_ptr<ExposureController> & e)
   {
@@ -59,6 +63,7 @@ public:
   const std::string & getName() const { return (name_); }
   const std::string & getPrefix() const { return (prefix_); }
 
+private:
   struct NodeInfo
   {
     enum NodeType { INVALID, ENUM, FLOAT, INT, BOOL, COMMAND };
@@ -73,7 +78,6 @@ public:
   void startCamera();
   bool stopCamera();
   void createCameraParameters();
-  bool connectToCamera();
   void setParameter(const NodeInfo & ni, const rclcpp::Parameter & p);
   bool setEnum(const std::string & nodeName, const std::string & v = "");
   bool setDouble(const std::string & nodeName, double v);
@@ -98,15 +102,26 @@ public:
       !name_.empty() ? name_ : (serial_.empty() ? std::string("camera") : serial_));
   }
 
+
   template <class T>
   T safe_declare(const std::string & name, const T & def)
   {
     try {
-      return (node_->declare_parameter<T>(name, def));
+    const rclcpp::ParameterValue param_value(def);
+    node_parameters->declare_parameter(name, param_value);
+
+    rclcpp::Parameter parameter;
+    node_parameters->get_parameter(name, parameter);
+    return parameter.get_value<T>();
+    
     } catch (const rclcpp::exceptions::ParameterAlreadyDeclaredException & e) {
-      T value;
-      (void)node_->get_parameter_or<T>(name, value, def);
-      return (value);
+
+      rclcpp::Parameter parameter;
+      if (node_parameters->get_parameter(name, parameter)) {
+          return parameter.get_value<T>();
+      } else {
+          return def;
+      }
     }
   }
 
@@ -115,25 +130,30 @@ public:
     const rcl_interfaces::msg::ParameterDescriptor & desc)
   {
     try {
-      node_->declare_parameter(name, pv, desc, false);
+      node_parameters->declare_parameter(name, pv, desc, false);
     } catch (rclcpp::exceptions::InvalidParameterTypeException & e) {
       RCLCPP_WARN_STREAM(
         get_logger(), "overwriting bad param with default: " + std::string(e.what()));
-      node_->declare_parameter(name, pv, desc, true);
+      node_parameters->declare_parameter(name, pv, desc, true);
     } catch (const rclcpp::exceptions::ParameterAlreadyDeclaredException & e) {
       // do nothing
     }
   }
-private:
   // ----- variables --
   std::string prefix_;
   std::string topicPrefix_;
-  rclcpp_lifecycle::LifecycleNode * node_;
-  // image_transport::ImageTransport * imageTransport_;
-  // image_transport::CameraPublisher pub_;
 
-  
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base;
+  rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timer;
+  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging;
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters;
+  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics;
+
   rclcpp::Publisher<flir_camera_msgs::msg::ImageMetaData>::SharedPtr metaPub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr imagePub_;
+  rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr cameraInfoPub_;
+
   std::string serial_;
   std::string name_;
   std::string cameraInfoURL_;
@@ -181,5 +201,10 @@ private:
   std::shared_ptr<ExposureController> exposureController_;
   bool firstSynchronizedFrame_{true};
 };
+
+extern template Camera::Camera(rclcpp::Node::SharedPtr, const std::string &, bool);
+extern template Camera::Camera(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &, bool);
+
+
 }  // namespace spinnaker_camera_driver
 #endif  // SPINNAKER_CAMERA_DRIVER__CAMERA_HPP_

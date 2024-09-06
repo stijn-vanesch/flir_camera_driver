@@ -6,6 +6,9 @@
 
 using LifecycleCallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
+namespace spinnaker_camera_driver
+{
+
 class CameraLifecycle : public rclcpp_lifecycle::LifecycleNode
 {
 public:
@@ -22,6 +25,9 @@ private:
 
   LifecycleCallbackReturn on_shutdown(const rclcpp_lifecycle::State &state);
 
+  LifecycleCallbackReturn on_cleanup(const rclcpp_lifecycle::State &state);
+
   LifecycleCallbackReturn on_error(const rclcpp_lifecycle::State &state);
 };
 
+}  // namespace spinnaker_camera_driver
