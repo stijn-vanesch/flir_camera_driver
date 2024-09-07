@@ -7,9 +7,7 @@ namespace spinnaker_camera_driver
 CameraLifecycle::CameraLifecycle(const std::string & node_name, const rclcpp::NodeOptions & options)
       : rclcpp_lifecycle::LifecycleNode(node_name, options)
 
-{
-  // camera_ = std::make_shared<spinnaker_camera_driver::Camera>(this, "");
-}
+{}
 
 LifecycleCallbackReturn CameraLifecycle::on_configure(const rclcpp_lifecycle::State &)
 {
@@ -55,12 +53,22 @@ LifecycleCallbackReturn CameraLifecycle::on_shutdown(const rclcpp_lifecycle::Sta
   {
     RCLCPP_INFO(get_logger(), "on_shutdown() has been called.");
 
+    if (!camera_->destoryComponents()) {
+      RCLCPP_ERROR(get_logger(), "camera destroy failed.");
+      return LifecycleCallbackReturn::FAILURE;
+    }
+
     return LifecycleCallbackReturn::SUCCESS;
   } 
 
 LifecycleCallbackReturn CameraLifecycle::on_cleanup(const rclcpp_lifecycle::State &)
   {
     RCLCPP_INFO(get_logger(), "on_cleanup() has been called.");
+    
+    if (!camera_->destoryComponents()) {
+      RCLCPP_ERROR(get_logger(), "camera destroy failed.");
+      return LifecycleCallbackReturn::FAILURE;
+    }
 
     return LifecycleCallbackReturn::SUCCESS;
   }
@@ -69,6 +77,11 @@ LifecycleCallbackReturn CameraLifecycle::on_cleanup(const rclcpp_lifecycle::Stat
 LifecycleCallbackReturn CameraLifecycle::on_error(const rclcpp_lifecycle::State &)
   {
     RCLCPP_INFO(get_logger(), "on_shutdown() has been called.");
+    
+    if (!camera_->destoryComponents()) {
+      RCLCPP_ERROR(get_logger(), "camera destroy failed.");
+      return LifecycleCallbackReturn::FAILURE;
+    }
 
     return LifecycleCallbackReturn::SUCCESS;
   } 

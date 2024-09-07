@@ -55,6 +55,7 @@ public:
   bool setCameraParams();
   bool startAcquisition();
   bool stopAcquisition();
+  bool destoryComponents();
   void setSynchronizer(const std::shared_ptr<Synchronizer> & s) { synchronizer_ = s; }
   void setExposureController(const std::shared_ptr<ExposureController> & e)
   {
@@ -139,6 +140,7 @@ private:
       // do nothing
     }
   }
+
   // ----- variables --
   std::string prefix_;
   std::string topicPrefix_;
@@ -179,7 +181,7 @@ private:
   sensor_msgs::msg::Image imageMsg_;
   sensor_msgs::msg::CameraInfo cameraInfoMsg_;
   flir_camera_msgs::msg::ImageMetaData metaMsg_;
-  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr callbackHandle_;  // keep alive callbacks
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr callbackHandle_;  // keep alive callbacks
   rclcpp::TimerBase::SharedPtr statusTimer_;
   rclcpp::TimerBase::SharedPtr checkSubscriptionsTimer_;
   bool cameraRunning_{false};
@@ -204,7 +206,6 @@ private:
 
 extern template Camera::Camera(rclcpp::Node::SharedPtr, const std::string &, bool);
 extern template Camera::Camera(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &, bool);
-
 
 }  // namespace spinnaker_camera_driver
 #endif  // SPINNAKER_CAMERA_DRIVER__CAMERA_HPP_

@@ -520,9 +520,9 @@ void Camera::run()
       }  // -------- end of locked section
       if (img && keepRunning_ && rclcpp::ok()) {
         doPublish(img);
-      //   if (exposureController_) {
-      //     exposureController_->update(this, img);
-      //   }
+        if (exposureController_) {
+          exposureController_->update(this, img);
+        }
       }
     }
   }
@@ -767,6 +767,75 @@ bool Camera::setCameraParams()
     return (false); 
   }
   return (true);
+}
+
+bool Camera::destoryComponents(){
+  // Cancel Timer
+  if (statusTimer_ && !statusTimer_->is_canceled()) {
+    statusTimer_->cancel();
+
+    if (statusTimer_->is_canceled()) {
+      LOG_INFO("statusTimer_ has been canceled.");
+    } else {
+      LOG_ERROR("statusTimer_ has not been canceled.");
+      return false;
+    }
+  }
+
+  if (checkSubscriptionsTimer_ && !checkSubscriptionsTimer_->is_canceled()) {
+    checkSubscriptionsTimer_->cancel();
+
+    if (checkSubscriptionsTimer_->is_canceled()) {
+      LOG_INFO("checkSubscriptionsTimer_ has been canceled.");
+    } else {
+      LOG_ERROR("checkSubscriptionsTimer_ has not been canceled.");
+      return false;
+    }
+  }
+
+  // Destroy Publishers
+  if (metaPub_) {
+    metaPub_.reset();
+    if (!metaPub_) {
+      LOG_INFO("metaPub_ has been destroyed.");
+    } else {
+      LOG_ERROR("metaPub_ has not been destroyed.");
+      return false;
+    }
+  }
+
+  if (imagePub_) {
+    imagePub_.reset();
+    if (!imagePub_) {
+      LOG_INFO("imagePub_ has been destroyed.");
+    } else {
+      LOG_ERROR("imagePub_ has not been destroyed.");
+      return false;
+    }
+  }
+
+  if (cameraInfoPub_) {
+    cameraInfoPub_.reset();
+    if (!cameraInfoPub_) {
+      LOG_INFO("cameraInfoPub_ has been destroyed.");
+    } else {
+      LOG_ERROR("cameraInfoPub_ has not been destroyed.");
+      return false;
+    }
+  }
+
+  // Destroy Subscriptions
+  if (controlSub_) {
+    controlSub_.reset();
+    if (!controlSub_) {
+      LOG_INFO("controlSub_ has been destroyed.");
+    } else {
+      LOG_ERROR("controlSub_ has not been destroyed.");
+      return false;
+    }
+  }
+
+  return true;
 }
 
 
