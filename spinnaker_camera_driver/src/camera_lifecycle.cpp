@@ -53,7 +53,7 @@ LifecycleCallbackReturn CameraLifecycle::on_shutdown(const rclcpp_lifecycle::Sta
   {
     RCLCPP_INFO(get_logger(), "on_shutdown() has been called.");
 
-    if (!camera_->destoryComponents()) {
+    if (!camera_->destroyComponents()) {
       RCLCPP_ERROR(get_logger(), "camera destroy failed.");
       return LifecycleCallbackReturn::FAILURE;
     }
@@ -65,7 +65,7 @@ LifecycleCallbackReturn CameraLifecycle::on_cleanup(const rclcpp_lifecycle::Stat
   {
     RCLCPP_INFO(get_logger(), "on_cleanup() has been called.");
     
-    if (!camera_->destoryComponents()) {
+    if (!camera_->destroyComponents()) {
       RCLCPP_ERROR(get_logger(), "camera destroy failed.");
       return LifecycleCallbackReturn::FAILURE;
     }
@@ -78,7 +78,7 @@ LifecycleCallbackReturn CameraLifecycle::on_error(const rclcpp_lifecycle::State 
   {
     RCLCPP_INFO(get_logger(), "on_shutdown() has been called.");
     
-    if (!camera_->destoryComponents()) {
+    if (!camera_->destroyComponents()) {
       RCLCPP_ERROR(get_logger(), "camera destroy failed.");
       return LifecycleCallbackReturn::FAILURE;
     }
