@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SPINNAKER_CAMERA_DRIVER__CAMERA_LIFECYCLE_HPP_
+#define SPINNAKER_CAMERA_DRIVER__CAMERA_LIFECYCLE_HPP_
 
 #include <memory>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -31,3 +32,4 @@ private:
 };
 
 }  // namespace spinnaker_camera_driver
+#endif  // SPINNAKER_CAMERA_DRIVER__CAMERA_LIFECYCLE_HPP_
