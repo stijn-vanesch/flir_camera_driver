@@ -48,6 +48,7 @@ public:
 
   ~Camera();
 
+  bool start();
   bool stop();
   bool configure();
   void startWrapper();

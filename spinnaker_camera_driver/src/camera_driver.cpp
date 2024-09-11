@@ -30,6 +30,10 @@ void CameraDriver::onInit()
   camera_ = std::make_shared<Camera>(shared_from_this(), "");
 
   // Startup camera
+  if (!camera_->start())
+  {
+    RCLCPP_INFO(get_logger(), "could not start camera!");
+  }
 }
 
 CameraDriver::~CameraDriver() {}
