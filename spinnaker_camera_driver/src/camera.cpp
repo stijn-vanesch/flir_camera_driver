@@ -198,10 +198,10 @@ void Camera::printStatus()
 void Camera::checkSubscriptions()
 {
   if (connectWhileSubscribed_) {
-    // if (pub_.getNumSubscribers() > 0 || metaPub_->get_subscription_count() != 0) {
+    if (pub_.getNumSubscribers() > 0 || metaPub_->get_subscription_count() != 0) {
       if (!cameraRunning_) {
         startCamera();
-      // }
+      }
     } else {
       if (cameraRunning_) {
         stopCamera();
@@ -223,7 +223,7 @@ void Camera::readParameters()
     LOG_INFO((adjustTimeStamp_ ? "" : "not ") << "adjusting time stamps!");
   }
 
-  cameraInfoURL_ = safe_declare<std::string>(prefix_ + "camerainfo_url", "");
+  cameraInfoURL_ = safe_declare<std::string>(prefix_ + "camerainfo_url", "../camera_params.yaml");
   frameId_ = safe_declare<std::string>(prefix_ + "frame_id", node_base->get_name());
   dumpNodeMap_ = safe_declare<bool>(prefix_ + "dump_node_map", false);
   qosDepth_ = safe_declare<int>(prefix_ + "image_queue_size", 4);
@@ -629,7 +629,7 @@ void Camera::doPublish(const ImageConstPtr & im)
     }
 
     sensor_msgs::msg::CameraInfo::UniquePtr cinfo(new sensor_msgs::msg::CameraInfo(cameraInfoMsg_));
-  //   // will make deep copy. Do we need to? Probably...
+    // will make deep copy. Do we need to? Probably...
     sensor_msgs::msg::Image::UniquePtr img(new sensor_msgs::msg::Image(imageMsg_));
     bool ret =
       sensor_msgs::fillImage(*img, encoding, im->height_, im->width_, im->stride_, im->data_);
@@ -637,6 +637,7 @@ void Camera::doPublish(const ImageConstPtr & im)
       LOG_ERROR("fill image failed!");
     } else {
       imagePub_->publish(std::move(img));
+      cameraInfoPub_->publish(std::move(cinfo));
       publishedCount_++;
     }
   }
@@ -676,25 +677,30 @@ void Camera::startCamera()
 
 bool Camera::configure()
 {
-  // readParameters();
-  // try {
-  //   if (!readParameterDefinitionFile()) {
-  //     return (false);
-  //   }
-  // } catch (const YAML::Exception & e) {
-  //   LOG_ERROR("error reading parameter definitions: " << e.what());
-  //   return (false);
-  // }
+  readParameters();
+  try {
+    if (!readParameterDefinitionFile()) {
+      return (false);
+    }
+  } catch (const YAML::Exception & e) {
+    LOG_ERROR("error reading parameter definitions: " << e.what());
+    return (false);
+  }
 
-  // startWrapper();
+  startWrapper();
 
-  // if (!initCamera()) {
-  //   return (false);
-  // }
+  if (!initCamera()) {
+    return (false);
+  }
 
-  // if (!setCameraParams()) {
-  //   return (false);
-  // }        
+  if (!setCameraParams()) {
+    return (false);
+  }        
+
+  // Load CameraInfo
+  if (!loadCameraInfo()) {
+    return (false);
+  }
 
   // Publishers
   // Creating replacement publishers to overcome not usable image_transport with lifeycle nodes
@@ -769,7 +775,7 @@ bool Camera::setCameraParams()
   return (true);
 }
 
-bool Camera::destoryComponents(){
+bool Camera::destroyComponents(){
   // Cancel Timer
   if (statusTimer_ && !statusTimer_->is_canceled()) {
     statusTimer_->cancel();
@@ -825,7 +831,7 @@ bool Camera::destoryComponents(){
   }
 
   // Destroy Subscriptions
-  if (controlSub_) {
+  if (controlSub_ && enableExternalControl_) {
     controlSub_.reset();
     if (!controlSub_) {
       LOG_INFO("controlSub_ has been destroyed.");
@@ -838,6 +844,54 @@ bool Camera::destoryComponents(){
   return true;
 }
 
+
+bool Camera::loadCameraInfo()
+{
+  if (!cameraInfoURL_.empty()) {
+    YAML::Node yamlFileCameraInfo = YAML::LoadFile(cameraInfoURL_);
+
+    if (yamlFileCameraInfo.IsNull()) {
+      LOG_ERROR("cannot open file: " << cameraInfoURL_);
+      return (false);
+    }
+
+    cameraInfoMsg_.width = yamlFileCameraInfo["image_width"].as<int>();
+    cameraInfoMsg_.height = yamlFileCameraInfo["image_height"].as<int>();
+    cameraInfoMsg_.distortion_model = yamlFileCameraInfo["distortion_model"].as<std::string>();
+    cameraInfoMsg_.d = yamlFileCameraInfo["distortion_coefficients"]["data"].as<std::vector<double>>();
+    
+    // Fill matrices K, R, P
+    if (yamlFileCameraInfo["camera_matrix"]["data"] && yamlFileCameraInfo["camera_matrix"]["data"].size() == 9){
+      for (std::size_t i = 0; i < 9; i++){
+        cameraInfoMsg_.k[i] = yamlFileCameraInfo["camera_matrix"]["data"][i].as<double>();
+      }
+    }
+
+    if (yamlFileCameraInfo["rectification_matrix"]["data"] && yamlFileCameraInfo["rectification_matrix"]["data"].size() == 9){
+      for (std::size_t i = 0; i < 9; i++){
+        cameraInfoMsg_.r[i] = yamlFileCameraInfo["rectification_matrix"]["data"][i].as<double>();
+      }
+    }
+
+    if (yamlFileCameraInfo["projection_matrix"]["data"] && yamlFileCameraInfo["projection_matrix"]["data"].size() == 12){
+      for (std::size_t i = 0; i < 12; i++){
+        cameraInfoMsg_.p[i] = yamlFileCameraInfo["projection_matrix"]["data"][i].as<double>();
+      }
+    }
+
+    cameraInfoMsg_.binning_x = yamlFileCameraInfo["binning_x"].as<int>();
+    cameraInfoMsg_.binning_y = yamlFileCameraInfo["binning_y"].as<int>();
+    cameraInfoMsg_.roi.x_offset = yamlFileCameraInfo["roi"]["x_offset"].as<int>();
+    cameraInfoMsg_.roi.y_offset = yamlFileCameraInfo["roi"]["y_offset"].as<int>();
+    cameraInfoMsg_.roi.height = yamlFileCameraInfo["roi"]["height"].as<int>();
+    cameraInfoMsg_.roi.width = yamlFileCameraInfo["roi"]["width"].as<int>();
+    cameraInfoMsg_.roi.do_rectify = yamlFileCameraInfo["roi"]["do_rectify"].as<bool>();
+    
+  }
+
+  LOG_INFO("camera info loaded from: " << cameraInfoURL_);
+  return (true);
+}
 
 bool Camera::startAcquisition()
 {
@@ -864,6 +918,19 @@ bool Camera::stopAcquisition()
   }
 
   return true;  
+}
+
+
+bool Camera::start(){
+  if (!configure()) {
+    return false;
+  }
+
+  if (!startAcquisition()) {
+    return false;
+  }
+
+  return true;
 };
 
 template Camera::Camera(rclcpp::Node::SharedPtr, const std::string &, bool);
