@@ -55,7 +55,8 @@ public:
   bool setCameraParams();
   bool startAcquisition();
   bool stopAcquisition();
-  bool destoryComponents();
+  bool destroyComponents();
+  bool loadCameraInfo();
   void setSynchronizer(const std::shared_ptr<Synchronizer> & s) { synchronizer_ = s; }
   void setExposureController(const std::shared_ptr<ExposureController> & e)
   {
