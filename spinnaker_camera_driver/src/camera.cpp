@@ -626,7 +626,6 @@ void Camera::doPublish(const ImageConstPtr & im)
       return;
     }
 
-    sensor_msgs::msg::CameraInfo::UniquePtr cinfo(new sensor_msgs::msg::CameraInfo(cameraInfoMsg_));
     // will make deep copy. Do we need to? Probably...
     sensor_msgs::msg::Image::UniquePtr img(new sensor_msgs::msg::Image(imageMsg_));
     bool ret =
@@ -635,10 +634,15 @@ void Camera::doPublish(const ImageConstPtr & im)
       LOG_ERROR("fill image failed!");
     } else {
       imagePub_->publish(std::move(img));
-      cameraInfoPub_->publish(std::move(cinfo));
+      // cameraInfoPub_->publish(std::move(cinfo));
       publishedCount_++;
     }
   }
+
+  if (cameraInfoPub_->get_subscription_count() > 0) {
+    cameraInfoPub_->publish(cameraInfoMsg_);
+  }
+
   if (metaPub_->get_subscription_count() != 0) {
     metaMsg_.header.frame_id = frameId_;
     metaMsg_.header.stamp = t;
