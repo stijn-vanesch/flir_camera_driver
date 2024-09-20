@@ -30,9 +30,8 @@ public:
   ~CameraDriver();
 
 private:
-
   void onInit();
-  std::shared_ptr<Camera> camera_;
+  // std::shared_ptr<Camera> camera_;
 };
 }  // namespace spinnaker_camera_driver
 #endif  // SPINNAKER_CAMERA_DRIVER__CAMERA_DRIVER_HPP_

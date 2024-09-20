@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "spinnaker_camera_driver/camera.hpp"
+
 #include <yaml-cpp/yaml.h>
 
 #include <chrono>
@@ -27,7 +29,6 @@
 #include <spinnaker_camera_driver/exposure_controller.hpp>
 #include <spinnaker_camera_driver/logging.hpp>
 #include <type_traits>
-#include "spinnaker_camera_driver/camera.hpp"
 
 namespace spinnaker_camera_driver
 {
@@ -111,11 +112,8 @@ Camera::NodeInfo::NodeInfo(const std::string & n, const std::string & nodeType) 
 }
 
 template <typename NodeT>
-Camera::Camera(
-  NodeT node, const std::string & prefix,
-  bool useStatus)
+Camera::Camera(NodeT node, const std::string & prefix, bool useStatus)
 {
-
   node_base = node->get_node_base_interface();
   node_timer = node->get_node_timers_interface();
   node_clock = node->get_node_clock_interface();
@@ -129,9 +127,9 @@ Camera::Camera(
   lastStatusTime_ = node_clock->get_clock()->now();
   if (useStatus) {
     statusTimer_ = rclcpp::create_timer(
-      node_base, node_timer, node_clock->get_clock(), rclcpp::Duration(5, 0), std::bind(&Camera::printStatus, this));
+      node_base, node_timer, node_clock->get_clock(), rclcpp::Duration(5, 0),
+      std::bind(&Camera::printStatus, this));
   }
-
 }
 
 Camera::~Camera()
@@ -198,7 +196,7 @@ void Camera::printStatus()
 void Camera::checkSubscriptions()
 {
   if (connectWhileSubscribed_) {
-    if (pub_.getNumSubscribers() > 0 || metaPub_->get_subscription_count() != 0) {
+    if (imagePub_->get_subscription_count() > 0 || metaPub_->get_subscription_count() > 0) {
       if (!cameraRunning_) {
         startCamera();
       }
@@ -674,7 +672,6 @@ void Camera::startCamera()
   }
 }
 
-
 bool Camera::configure()
 {
   readParameters();
@@ -695,7 +692,7 @@ bool Camera::configure()
 
   if (!setCameraParams()) {
     return (false);
-  }        
+  }
 
   // Load CameraInfo
   if (!loadCameraInfo()) {
@@ -704,14 +701,16 @@ bool Camera::configure()
 
   // Publishers
   // Creating replacement publishers to overcome not usable image_transport with lifeycle nodes
-  metaPub_ = rclcpp::create_publisher<flir_camera_msgs::msg::ImageMetaData>(node_topics, "~/" + topicPrefix_ + "meta", rclcpp::QoS(1));
-  imagePub_ = rclcpp::create_publisher<sensor_msgs::msg::Image>(node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::QoS(10));
-  cameraInfoPub_ = rclcpp::create_publisher<sensor_msgs::msg::CameraInfo>(node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::QoS(10));
+  metaPub_ = rclcpp::create_publisher<flir_camera_msgs::msg::ImageMetaData>(
+    node_topics, "~/" + topicPrefix_ + "meta", rclcpp::QoS(1));
+  imagePub_ = rclcpp::create_publisher<sensor_msgs::msg::Image>(
+    node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::QoS(10));
+  cameraInfoPub_ = rclcpp::create_publisher<sensor_msgs::msg::CameraInfo>(
+    node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::QoS(10));
 
   if (enableExternalControl_) {
     controlSub_ = rclcpp::create_subscription<flir_camera_msgs::msg::CameraControl>(
-      node_topics,
-      "~/" + topicPrefix_ + "control", 10,
+      node_topics, "~/" + topicPrefix_ + "control", 10,
       std::bind(&Camera::controlCallback, this, std::placeholders::_1));
   }
 
@@ -727,7 +726,6 @@ void Camera::startWrapper()
   wrapper_->setAcquisitionTimeout(acquisitionTimeout_);
   LOG_INFO("wrapper initialized with version: " + wrapper_->getLibraryVersion());
 }
-
 
 bool Camera::initCamera()
 {
@@ -754,9 +752,8 @@ bool Camera::initCamera()
   return (true);
 }
 
-
 bool Camera::setCameraParams()
-{ 
+{
   if (wrapper_->initCamera(serial_)) {
     if (dumpNodeMap_) {
       LOG_INFO("dumping node map!");
@@ -770,12 +767,13 @@ bool Camera::setCameraParams()
 
   } else {
     LOG_ERROR("init camera failed for cam: " << serial_);
-    return (false); 
+    return (false);
   }
   return (true);
 }
 
-bool Camera::destroyComponents(){
+bool Camera::destroyComponents()
+{
   // Cancel Timer
   if (statusTimer_ && !statusTimer_->is_canceled()) {
     statusTimer_->cancel();
@@ -844,7 +842,6 @@ bool Camera::destroyComponents(){
   return true;
 }
 
-
 bool Camera::loadCameraInfo()
 {
   if (!cameraInfoURL_.empty()) {
@@ -858,23 +855,30 @@ bool Camera::loadCameraInfo()
     cameraInfoMsg_.width = yamlFileCameraInfo["image_width"].as<int>();
     cameraInfoMsg_.height = yamlFileCameraInfo["image_height"].as<int>();
     cameraInfoMsg_.distortion_model = yamlFileCameraInfo["distortion_model"].as<std::string>();
-    cameraInfoMsg_.d = yamlFileCameraInfo["distortion_coefficients"]["data"].as<std::vector<double>>();
-    
+    cameraInfoMsg_.d =
+      yamlFileCameraInfo["distortion_coefficients"]["data"].as<std::vector<double>>();
+
     // Fill matrices K, R, P
-    if (yamlFileCameraInfo["camera_matrix"]["data"] && yamlFileCameraInfo["camera_matrix"]["data"].size() == 9){
-      for (std::size_t i = 0; i < 9; i++){
+    if (
+      yamlFileCameraInfo["camera_matrix"]["data"] &&
+      yamlFileCameraInfo["camera_matrix"]["data"].size() == 9) {
+      for (std::size_t i = 0; i < 9; i++) {
         cameraInfoMsg_.k[i] = yamlFileCameraInfo["camera_matrix"]["data"][i].as<double>();
       }
     }
 
-    if (yamlFileCameraInfo["rectification_matrix"]["data"] && yamlFileCameraInfo["rectification_matrix"]["data"].size() == 9){
-      for (std::size_t i = 0; i < 9; i++){
+    if (
+      yamlFileCameraInfo["rectification_matrix"]["data"] &&
+      yamlFileCameraInfo["rectification_matrix"]["data"].size() == 9) {
+      for (std::size_t i = 0; i < 9; i++) {
         cameraInfoMsg_.r[i] = yamlFileCameraInfo["rectification_matrix"]["data"][i].as<double>();
       }
     }
 
-    if (yamlFileCameraInfo["projection_matrix"]["data"] && yamlFileCameraInfo["projection_matrix"]["data"].size() == 12){
-      for (std::size_t i = 0; i < 12; i++){
+    if (
+      yamlFileCameraInfo["projection_matrix"]["data"] &&
+      yamlFileCameraInfo["projection_matrix"]["data"].size() == 12) {
+      for (std::size_t i = 0; i < 12; i++) {
         cameraInfoMsg_.p[i] = yamlFileCameraInfo["projection_matrix"]["data"][i].as<double>();
       }
     }
@@ -886,7 +890,6 @@ bool Camera::loadCameraInfo()
     cameraInfoMsg_.roi.height = yamlFileCameraInfo["roi"]["height"].as<int>();
     cameraInfoMsg_.roi.width = yamlFileCameraInfo["roi"]["width"].as<int>();
     cameraInfoMsg_.roi.do_rectify = yamlFileCameraInfo["roi"]["do_rectify"].as<bool>();
-    
   }
 
   LOG_INFO("camera info loaded from: " << cameraInfoURL_);
@@ -904,9 +907,8 @@ bool Camera::startAcquisition()
       node_base, node_timer, node_clock->get_clock(), rclcpp::Duration(1, 0),
       std::bind(&Camera::checkSubscriptions, this));
   }
-  return(true);
+  return true;
 }
-
 
 bool Camera::stopAcquisition()
 {
@@ -917,11 +919,11 @@ bool Camera::stopAcquisition()
     thread_ = 0;
   }
 
-  return true;  
+  return true;
 }
 
-
-bool Camera::start(){
+bool Camera::start()
+{
   if (!configure()) {
     return false;
   }
@@ -931,7 +933,7 @@ bool Camera::start(){
   }
 
   return true;
-};
+}
 
 template Camera::Camera(rclcpp::Node::SharedPtr, const std::string &, bool);
 template Camera::Camera(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &, bool);

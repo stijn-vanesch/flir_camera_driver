@@ -166,7 +166,9 @@ def launch_setup(context, *args, **kwargs):
                 'ffmpeg_image_transport.encoding': 'hevc_nvenc',
                 'parameter_file': parameter_file,
                 'serial_number': [LaunchConfig('serial')],
-                'camera_info_url': 'package://spinnaker_camera_driver/config/' + camera_type + '.yaml',
+                'camera_info_url': 'package://spinnaker_camera_driver/config/' +
+                                   camera_type +
+                                   '.yaml',
             },
         ],
         remappings=[

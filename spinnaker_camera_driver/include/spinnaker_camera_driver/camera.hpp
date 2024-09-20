@@ -31,6 +31,7 @@
 #include <spinnaker_camera_driver/synchronizer.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <thread>
+
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace spinnaker_camera_driver
@@ -40,11 +41,9 @@ class Camera
 {
 public:
   using ImageConstPtr = spinnaker_camera_driver::ImageConstPtr;
-  
-  template<typename NodeT>
-  explicit Camera(
-    NodeT node, const std::string & prefix,
-    bool useStatus = true);
+
+  template <typename NodeT>
+  explicit Camera(NodeT node, const std::string & prefix, bool useStatus = true);
 
   ~Camera();
 
@@ -105,25 +104,22 @@ private:
       !name_.empty() ? name_ : (serial_.empty() ? std::string("camera") : serial_));
   }
 
-
   template <class T>
   T safe_declare(const std::string & name, const T & def)
   {
     try {
-    const rclcpp::ParameterValue param_value(def);
-    node_parameters->declare_parameter(name, param_value);
-
-    rclcpp::Parameter parameter;
-    node_parameters->get_parameter(name, parameter);
-    return parameter.get_value<T>();
-    
-    } catch (const rclcpp::exceptions::ParameterAlreadyDeclaredException & e) {
+      const rclcpp::ParameterValue param_value(def);
+      node_parameters->declare_parameter(name, param_value);
 
       rclcpp::Parameter parameter;
+      node_parameters->get_parameter(name, parameter);
+      return parameter.get_value<T>();
+    } catch (const rclcpp::exceptions::ParameterAlreadyDeclaredException & e) {
+      rclcpp::Parameter parameter;
       if (node_parameters->get_parameter(name, parameter)) {
-          return parameter.get_value<T>();
+        return parameter.get_value<T>();
       } else {
-          return def;
+        return def;
       }
     }
   }
@@ -183,7 +179,8 @@ private:
   sensor_msgs::msg::Image imageMsg_;
   sensor_msgs::msg::CameraInfo cameraInfoMsg_;
   flir_camera_msgs::msg::ImageMetaData metaMsg_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr callbackHandle_;  // keep alive callbacks
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
+    callbackHandle_;  // keep alive callbacks
   rclcpp::TimerBase::SharedPtr statusTimer_;
   rclcpp::TimerBase::SharedPtr checkSubscriptionsTimer_;
   bool cameraRunning_{false};
@@ -207,7 +204,8 @@ private:
 };
 
 extern template Camera::Camera(rclcpp::Node::SharedPtr, const std::string &, bool);
-extern template Camera::Camera(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &, bool);
+extern template Camera::Camera(
+  rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &, bool);
 
 }  // namespace spinnaker_camera_driver
 #endif  // SPINNAKER_CAMERA_DRIVER__CAMERA_HPP_
