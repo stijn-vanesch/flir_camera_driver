@@ -92,11 +92,11 @@ parameters:
   - name: frame_rate
     type: float
     node: AcquisitionControl/AcquisitionFrameRate
-  - name: trigger_selector  # NOT TESTED
+  - name: trigger_selector
     type: enum
     # valid values are e.g. "FrameStart", "ExposureActive"
     node: AcquisitionControl/TriggerSelector
-  - name: trigger_source  # NOT TESTED
+  - name: trigger_source
     type: enum
     # valid values are "Software", "Line<0,2,3>"
     node: AcquisitionControl/TriggerSource
