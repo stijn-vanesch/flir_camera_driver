@@ -14,12 +14,13 @@
 // limitations under the License.
 
 #include <spinnaker_camera_driver/camera_lifecycle.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
 namespace spinnaker_camera_driver
 {
 
-CameraLifecycle::CameraLifecycle(const std::string & node_name, const rclcpp::NodeOptions & options)
-: rclcpp_lifecycle::LifecycleNode(node_name, options)
+CameraLifecycle::CameraLifecycle(const rclcpp::NodeOptions & options)
+: rclcpp_lifecycle::LifecycleNode("camera_driver_node", options)
 
 {
   // camera_ = std::make_shared<spinnaker_camera_driver::Camera>(this, "");
@@ -91,7 +92,7 @@ LifecycleCallbackReturn CameraLifecycle::on_cleanup(const rclcpp_lifecycle::Stat
 
 LifecycleCallbackReturn CameraLifecycle::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown() has been called.");
+  RCLCPP_INFO(get_logger(), "on_error() has been called.");
 
   if (!camera_->destroyComponents()) {
     RCLCPP_ERROR(get_logger(), "camera destroy failed.");
@@ -102,3 +103,6 @@ LifecycleCallbackReturn CameraLifecycle::on_error(const rclcpp_lifecycle::State 
 }
 
 }  // namespace spinnaker_camera_driver
+
+
+RCLCPP_COMPONENTS_REGISTER_NODE(spinnaker_camera_driver::CameraLifecycle)

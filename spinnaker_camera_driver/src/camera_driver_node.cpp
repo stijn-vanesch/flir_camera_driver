@@ -24,8 +24,7 @@ int main(int argc, char * argv[])
   // auto node = std::make_shared<spinnaker_camera_driver::CameraDriver>(rclcpp::NodeOptions());
 
   std::shared_ptr<spinnaker_camera_driver::CameraLifecycle> cameraLifecycle =
-    std::make_shared<spinnaker_camera_driver::CameraLifecycle>(
-      "camera_driver_node", rclcpp::NodeOptions());
+    std::make_shared<spinnaker_camera_driver::CameraLifecycle>(rclcpp::NodeOptions());
 
   rclcpp::executors::MultiThreadedExecutor executor;
 

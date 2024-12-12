@@ -30,7 +30,7 @@ namespace spinnaker_camera_driver
 class CameraLifecycle : public rclcpp_lifecycle::LifecycleNode
 {
 public:
-  explicit CameraLifecycle(const std::string & node_name, const rclcpp::NodeOptions & options);
+  explicit CameraLifecycle(const rclcpp::NodeOptions & options);
   ~CameraLifecycle();
 
 private:

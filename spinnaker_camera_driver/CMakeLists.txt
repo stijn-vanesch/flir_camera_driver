@@ -115,6 +115,8 @@ target_include_directories(camera_driver
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
+rclcpp_components_register_nodes(camera_driver "spinnaker_camera_driver::CameraDriver")
+rclcpp_components_register_nodes(camera_driver "spinnaker_camera_driver::CameraLifecycle")
 
 #
 # the driver node uses the shared library

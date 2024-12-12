@@ -40,3 +40,6 @@ void CameraDriver::onInit()
 
 CameraDriver::~CameraDriver() {}
 }  // namespace spinnaker_camera_driver
+
+
+RCLCPP_COMPONENTS_REGISTER_NODE(spinnaker_camera_driver::CameraDriver)
