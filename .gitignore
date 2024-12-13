@@ -1,1 +1,9 @@
 */launch/__pycache__
+
+#logs
+build/
+install/
+log/
+
+#vscode
+settings.json
