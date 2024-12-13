@@ -941,7 +941,7 @@ bool Camera::start()
   return true;
 }
 
-template Camera::Camera(rclcpp::Node::SharedPtr, const std::string &, bool);
-template Camera::Camera(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &, bool);
+template Camera::Camera(rclcpp::Node*, const std::string &, bool);
+template Camera::Camera(rclcpp_lifecycle::LifecycleNode*, const std::string &, bool);
 
 }  // namespace spinnaker_camera_driver

@@ -16,7 +16,6 @@
 #ifndef SPINNAKER_CAMERA_DRIVER__CAMERA_DRIVER_HPP_
 #define SPINNAKER_CAMERA_DRIVER__CAMERA_DRIVER_HPP_
 
-#include <image_transport/image_transport.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <spinnaker_camera_driver/camera.hpp>
@@ -30,8 +29,7 @@ public:
   ~CameraDriver();
 
 private:
-  void onInit();
-  // std::shared_ptr<Camera> camera_;
+  std::shared_ptr<spinnaker_camera_driver::Camera> camera_;
 };
 }  // namespace spinnaker_camera_driver
 #endif  // SPINNAKER_CAMERA_DRIVER__CAMERA_DRIVER_HPP_

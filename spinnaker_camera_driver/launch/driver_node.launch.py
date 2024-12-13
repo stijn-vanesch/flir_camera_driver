@@ -29,20 +29,24 @@ example_parameters = {
         'compute_brightness': False,
         'adjust_timestamp': True,
         'dump_node_map': False,
+        'enable_external_control': True,
         # set parameters defined in blackfly_s.yaml
-        'gain_auto': 'Continuous',
+        'gain_auto': 'Off',
+        'gain': 18,
         # 'pixel_format': 'BayerRG8',
-        'exposure_auto': 'Continuous',
-        # to use a user set, do this:
+        'exposure_auto': 'Off',
+        'exposure_time': 14000,
+        # to use a user set, do this:   
         'user_set_selector': 'UserSet0',
         'user_set_load': 'Yes',
         # These are useful for GigE cameras
         # 'device_link_throughput_limit': 380000000,
         # 'gev_scps_packet_size': 9000,
         # ---- to reduce the sensor width and shift the crop
-        'image_width': 1408,
-        'image_height': 1080,
-        'offset_x': 16,
+        
+        'image_width': 2448,
+        'image_height': 2048,
+        'offset_x': 0,
         'offset_y': 0,
         # 'binning_x': 1,
         # 'binning_y': 1,
@@ -166,9 +170,7 @@ def launch_setup(context, *args, **kwargs):
                 'ffmpeg_image_transport.encoding': 'hevc_nvenc',
                 'parameter_file': parameter_file,
                 'serial_number': [LaunchConfig('serial')],
-                'camera_info_url': 'package://spinnaker_camera_driver/config/' +
-                                   camera_type +
-                                   '.yaml',
+                'camerainfo_url': '/home/wefabricate/dev_stijn/camera_params_23306238.yaml' ,
             },
         ],
         remappings=[
@@ -195,7 +197,7 @@ def generate_launch_description():
             ),
             LaunchArg(
                 'serial',
-                default_value="'20435008'",
+                default_value="'23306238'",
                 description='FLIR serial number of camera (in quotes!!)',
             ),
             LaunchArg(

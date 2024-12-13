@@ -41,7 +41,7 @@ camera_params = {
     'user_set_selector': 'UserSet0',
     'user_set_load': 'Yes',
     # These are useful for GigE cameras
-    'device_link_throughput_limit': 50000000,
+    'device_link_throughput_limit': 60000000,
     # 'gev_scps_packet_size': 9000,
     # ---- to reduce the sensor width and shift the crop
     
@@ -53,7 +53,7 @@ camera_params = {
     # 'binning_y': 1,
     # 'connect_while_subscribed': True,
     'frame_rate_auto': 'Off',
-    'frame_rate': 9.0,
+    'frame_rate': 10.0,
     'frame_rate_enable': True,
     'buffer_queue_size': 10,
     'trigger_mode': 'Off',

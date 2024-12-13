@@ -23,15 +23,13 @@ CameraLifecycle::CameraLifecycle(const rclcpp::NodeOptions & options)
 : rclcpp_lifecycle::LifecycleNode("camera_driver_node", options)
 
 {
-  // camera_ = std::make_shared<spinnaker_camera_driver::Camera>(this, "");
+  camera_ = std::make_shared<spinnaker_camera_driver::Camera>(static_cast<rclcpp_lifecycle::LifecycleNode*>(this), "");
 }
 
 CameraLifecycle::~CameraLifecycle() {}
 
 LifecycleCallbackReturn CameraLifecycle::on_configure(const rclcpp_lifecycle::State &)
 {
-  camera_ = std::make_shared<spinnaker_camera_driver::Camera>(shared_from_this(), "");
-
   RCLCPP_INFO(get_logger(), "on_configure() has been called.");
 
   if (!camera_->configure()) {

@@ -23,19 +23,12 @@ namespace spinnaker_camera_driver
 {
 CameraDriver::CameraDriver(const rclcpp::NodeOptions & options) : Node("camera_driver", options)
 {
-  // camera_ = std::make_shared<Camera>(this, "");
-}
-
-// Add onInit function to receive a shared pointer to the node
-void CameraDriver::onInit()
-{
-  // camera_ = std::make_shared<Camera>(shared_from_this(), "");
-
-  // // Startup camera
-  // if (!camera_->start())
-  // {
-  //   RCLCPP_INFO(get_logger(), "could not start camera!");
-  // }
+  camera_ = std::make_shared<Camera>(static_cast<rclcpp::Node*>(this), "", true);
+  // Startup camera
+  if (!camera_->start())
+  {
+    RCLCPP_INFO(get_logger(), "could not start camera!");
+  }
 }
 
 CameraDriver::~CameraDriver() {}

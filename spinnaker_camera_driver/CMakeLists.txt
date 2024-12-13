@@ -131,7 +131,7 @@ target_include_directories(camera_driver_node
   $<INSTALL_INTERFACE:include>
 )
 
-target_include_directories(camera_driver PRIVATE include)
+target_include_directories(camera_driver_node PRIVATE include)
 
 if(SPINNAKER_WAS_DOWNLOADED)
   set(SPINNAKER_BUILD_SUBDIR "opt/spinnaker/lib")
@@ -145,6 +145,28 @@ endif()
 
 install(TARGETS
   camera_driver_node
+  DESTINATION lib/${PROJECT_NAME}/)
+
+#
+# the driver node uses the shared library
+#
+add_executable(camera_lifecycle_node
+  src/camera_lifecycle_node.cpp)
+
+target_link_libraries(camera_lifecycle_node PUBLIC camera_driver PRIVATE Spinnaker::Spinnaker)
+
+target_include_directories(camera_lifecycle_node
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(camera_lifecycle_node PRIVATE include)
+
+# the node must go into the project specific lib directory or else
+# the launch file will not find it
+
+install(TARGETS
+  camera_lifecycle_node
   DESTINATION lib/${PROJECT_NAME}/)
 
 # the shared library goes into the global lib dir so it can
