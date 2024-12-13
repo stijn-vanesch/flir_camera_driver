@@ -220,7 +220,8 @@ void Camera::readParameters()
     LOG_INFO((adjustTimeStamp_ ? "" : "not ") << "adjusting time stamps!");
   }
 
-  cameraInfoURL_ = safe_declare<std::string>(prefix_ + "camerainfo_url", "../camera_params_23306238.yaml");
+  cameraInfoURL_ =
+    safe_declare<std::string>(prefix_ + "camerainfo_url", "../camera_params_23306238.yaml");
   frameId_ = safe_declare<std::string>(prefix_ + "frame_id", node_base->get_name());
   dumpNodeMap_ = safe_declare<bool>(prefix_ + "dump_node_map", false);
   qosDepth_ = safe_declare<int>(prefix_ + "image_queue_size", 4);
@@ -841,7 +842,7 @@ bool Camera::destroyComponents()
       return false;
     }
   }
-  
+
   // Reset Wrapper
   wrapper_.reset();
 
@@ -941,7 +942,7 @@ bool Camera::start()
   return true;
 }
 
-template Camera::Camera(rclcpp::Node*, const std::string &, bool);
-template Camera::Camera(rclcpp_lifecycle::LifecycleNode*, const std::string &, bool);
+template Camera::Camera(rclcpp::Node *, const std::string &, bool);
+template Camera::Camera(rclcpp_lifecycle::LifecycleNode *, const std::string &, bool);
 
 }  // namespace spinnaker_camera_driver

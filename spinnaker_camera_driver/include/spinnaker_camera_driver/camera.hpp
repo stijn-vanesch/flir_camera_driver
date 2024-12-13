@@ -175,7 +175,6 @@ private:
   int64_t baseTimeOffset_{0};
   float currentGain_{std::numeric_limits<float>::lowest()};
   std::shared_ptr<spinnaker_camera_driver::SpinnakerWrapper> wrapper_;
-  // std::shared_ptr<camera_info_manager::CameraInfoManager> infoManager_;
   sensor_msgs::msg::Image imageMsg_;
   sensor_msgs::msg::CameraInfo cameraInfoMsg_;
   flir_camera_msgs::msg::ImageMetaData metaMsg_;
@@ -203,9 +202,8 @@ private:
   bool firstSynchronizedFrame_{true};
 };
 
-extern template Camera::Camera(rclcpp::Node*, const std::string &, bool);
-extern template Camera::Camera(
-  rclcpp_lifecycle::LifecycleNode*, const std::string &, bool);
+extern template Camera::Camera(rclcpp::Node *, const std::string &, bool);
+extern template Camera::Camera(rclcpp_lifecycle::LifecycleNode *, const std::string &, bool);
 
 }  // namespace spinnaker_camera_driver
 #endif  // SPINNAKER_CAMERA_DRIVER__CAMERA_HPP_

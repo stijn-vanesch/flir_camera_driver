@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <spinnaker_camera_driver/camera_lifecycle.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
+#include <spinnaker_camera_driver/camera_lifecycle.hpp>
 
 namespace spinnaker_camera_driver
 {
@@ -23,7 +23,8 @@ CameraLifecycle::CameraLifecycle(const rclcpp::NodeOptions & options)
 : rclcpp_lifecycle::LifecycleNode("camera_driver_node", options)
 
 {
-  camera_ = std::make_shared<spinnaker_camera_driver::Camera>(static_cast<rclcpp_lifecycle::LifecycleNode*>(this), "");
+  camera_ = std::make_shared<spinnaker_camera_driver::Camera>(
+    static_cast<rclcpp_lifecycle::LifecycleNode *>(this), "");
 }
 
 CameraLifecycle::~CameraLifecycle() {}
@@ -101,6 +102,5 @@ LifecycleCallbackReturn CameraLifecycle::on_error(const rclcpp_lifecycle::State 
 }
 
 }  // namespace spinnaker_camera_driver
-
 
 RCLCPP_COMPONENTS_REGISTER_NODE(spinnaker_camera_driver::CameraLifecycle)

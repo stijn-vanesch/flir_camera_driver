@@ -23,16 +23,14 @@ namespace spinnaker_camera_driver
 {
 CameraDriver::CameraDriver(const rclcpp::NodeOptions & options) : Node("camera_driver", options)
 {
-  camera_ = std::make_shared<Camera>(static_cast<rclcpp::Node*>(this), "", true);
+  camera_ = std::make_shared<Camera>(static_cast<rclcpp::Node *>(this), "", true);
   // Startup camera
-  if (!camera_->start())
-  {
+  if (!camera_->start()) {
     RCLCPP_INFO(get_logger(), "could not start camera!");
   }
 }
 
 CameraDriver::~CameraDriver() {}
 }  // namespace spinnaker_camera_driver
-
 
 RCLCPP_COMPONENTS_REGISTER_NODE(spinnaker_camera_driver::CameraDriver)

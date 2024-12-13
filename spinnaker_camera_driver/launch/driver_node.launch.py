@@ -36,14 +36,14 @@ example_parameters = {
         # 'pixel_format': 'BayerRG8',
         'exposure_auto': 'Off',
         'exposure_time': 14000,
-        # to use a user set, do this:   
+        # to use a user set, do this:
         'user_set_selector': 'UserSet0',
         'user_set_load': 'Yes',
         # These are useful for GigE cameras
         # 'device_link_throughput_limit': 380000000,
         # 'gev_scps_packet_size': 9000,
         # ---- to reduce the sensor width and shift the crop
-        
+
         'image_width': 2448,
         'image_height': 2048,
         'offset_x': 0,
@@ -170,7 +170,7 @@ def launch_setup(context, *args, **kwargs):
                 'ffmpeg_image_transport.encoding': 'hevc_nvenc',
                 'parameter_file': parameter_file,
                 'serial_number': [LaunchConfig('serial')],
-                'camerainfo_url': '/home/wefabricate/dev_stijn/camera_params_23306238.yaml' ,
+                'camerainfo_url': '/home/wefabricate/dev_stijn/camera_params_23306238.yaml',
             },
         ],
         remappings=[
