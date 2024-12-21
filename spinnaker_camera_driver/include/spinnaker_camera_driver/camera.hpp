@@ -16,7 +16,6 @@
 #ifndef SPINNAKER_CAMERA_DRIVER__CAMERA_HPP_
 #define SPINNAKER_CAMERA_DRIVER__CAMERA_HPP_
 
-#include <camera_info_manager/camera_info_manager.hpp>
 #include <deque>
 #include <flir_camera_msgs/msg/camera_control.hpp>
 #include <flir_camera_msgs/msg/image_meta_data.hpp>

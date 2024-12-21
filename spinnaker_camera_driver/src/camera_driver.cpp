@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <image_transport/image_transport.hpp>
 #include <rclcpp/node_options.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <spinnaker_camera_driver/camera_driver.hpp>

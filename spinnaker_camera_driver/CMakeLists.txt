@@ -76,8 +76,6 @@ set(ROS_DEPENDENCIES
   "rclcpp_lifecycle"
   "sensor_msgs"
   "std_msgs"
-  "camera_info_manager"
-  "image_transport"
   "flir_camera_msgs")
 
 # find dependencies
