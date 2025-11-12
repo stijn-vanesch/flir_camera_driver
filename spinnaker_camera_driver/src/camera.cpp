@@ -221,7 +221,7 @@ void Camera::readParameters()
   }
 
   cameraInfoURL_ =
-    safe_declare<std::string>(prefix_ + "camerainfo_url", "../camera_params_23306238.yaml");
+    safe_declare<std::string>(prefix_ + "camerainfo_url", "");
   frameId_ = safe_declare<std::string>(prefix_ + "frame_id", node_base->get_name());
   dumpNodeMap_ = safe_declare<bool>(prefix_ + "dump_node_map", false);
   qosDepth_ = safe_declare<int>(prefix_ + "image_queue_size", 4);
@@ -704,13 +704,13 @@ bool Camera::configure()
   }
 
   // Publishers
-  // Creating replacement publishers to overcome not usable image_transport with lifeycle nodes
+  // Creating replacement publishers to overcome not usable image_transport with lifecycle nodes
   metaPub_ = rclcpp::create_publisher<flir_camera_msgs::msg::ImageMetaData>(
     node_topics, "~/" + topicPrefix_ + "meta", rclcpp::QoS(1));
   imagePub_ = rclcpp::create_publisher<sensor_msgs::msg::Image>(
-    node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::QoS(10));
+    node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::SensorDataQoS());
   cameraInfoPub_ = rclcpp::create_publisher<sensor_msgs::msg::CameraInfo>(
-    node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::QoS(10));
+    node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::SensorDataQoS());
 
   if (enableExternalControl_) {
     controlSub_ = rclcpp::create_subscription<flir_camera_msgs::msg::CameraControl>(
