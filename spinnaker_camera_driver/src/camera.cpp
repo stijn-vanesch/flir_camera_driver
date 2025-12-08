@@ -616,7 +616,7 @@ void Camera::doPublish(const ImageConstPtr & im)
 
   // Populating the messages
 
-  if (imagePub_->get_subscription_count() > 0) {
+  // if (imagePub_->get_subscription_count() > 0) {
     bool canEncode{false};
     const std::string encoding = flir_to_ros_encoding(im->pixelFormat_, &canEncode);
     if (!canEncode) {
@@ -637,11 +637,11 @@ void Camera::doPublish(const ImageConstPtr & im)
       // cameraInfoPub_->publish(std::move(cinfo));
       publishedCount_++;
     }
-  }
+  // }
 
-  if (cameraInfoPub_->get_subscription_count() > 0) {
+  // if (cameraInfoPub_->get_subscription_count() > 0) {
     cameraInfoPub_->publish(cameraInfoMsg_);
-  }
+  // }
 
   if (metaPub_->get_subscription_count() != 0) {
     metaMsg_.header.frame_id = frameId_;
@@ -708,9 +708,11 @@ bool Camera::configure()
   metaPub_ = rclcpp::create_publisher<flir_camera_msgs::msg::ImageMetaData>(
     node_topics, "~/" + topicPrefix_ + "meta", rclcpp::QoS(1));
   imagePub_ = rclcpp::create_publisher<sensor_msgs::msg::Image>(
-    node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::SensorDataQoS());
+    // node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::SensorDataQoS());
+    node_topics, "~/" + topicPrefix_ + "image_raw", rclcpp::QoS(10));
   cameraInfoPub_ = rclcpp::create_publisher<sensor_msgs::msg::CameraInfo>(
-    node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::SensorDataQoS());
+    // node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::SensorDataQoS());
+    node_topics, "~/" + topicPrefix_ + "image_raw/camera_info", rclcpp::QoS(10));
 
   if (enableExternalControl_) {
     controlSub_ = rclcpp::create_subscription<flir_camera_msgs::msg::CameraControl>(
